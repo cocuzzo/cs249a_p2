@@ -11,3 +11,8 @@
 *.lai
 *.la
 *.a
+
+# Hidden and Temporary files
+._*
+._*.*
+.*.*
