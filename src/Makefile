@@ -1,4 +1,4 @@
-CXXFLAGS = -Wall -g
+CXXFLAGS = -Wall -g -std=c++0x
 
 OBJECTS = Instance.o
 
