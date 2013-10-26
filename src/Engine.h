@@ -5,6 +5,8 @@
 #include <vector>
 #include <list>
 
+#include "Types.h"
+#include "Nominal.h"
 #include "Ptr.h"
 #include "PtrInterface.h"
 #include "Instance.h"
@@ -15,34 +17,34 @@ namespace Shipping {
 // ordinal types
 class Mile : public Ordinal<Mile, unsigned int> {
 public:
-	Mile(unsigned int num) : Ordinal<Mile, unsigned int>(num);
+	Mile(unsigned int num) : Ordinal<Mile, unsigned int>(num){}
 };
 
 class Difficulty : public Ordinal<Difficulty, float> {
 public:
-	Difficulty(float num) : Ordinal<Difficulty, float>(num);
+	Difficulty(float num) : Ordinal<Difficulty, float>(num){}
 };
 
 class Speed : public Ordinal<Speed, float> {
 public:
-	Speed(float num) : Ordinal<Speed, float>(num);
+	Speed(float num) : Ordinal<Speed, float>(num){}
 };
 
 class Cost : public Ordinal<Cost, float> {
 public:
-	Cost(float num) : Ordinal<Cost, float>(num);
+	Cost(float num) : Ordinal<Cost, float>(num){}
 };
 
 class Capacity : public Ordinal<Capacity, float> {
 public:
-	Capacity(float num) : Ordinal<Capacity, float>(num);
+	Capacity(float num) : Ordinal<Capacity, float>(num){}
 
 };
 
 class Time : public Ordinal<Time, unsigned int> {
 public:
-	Time(unsigned int num) : Ordinal<Time, unsigned int>(num);
-}
+	Time(unsigned int num) : Ordinal<Time, unsigned int>(num){}
+};
 
 class Segment; //Location needs to know about Segments before decl
 
@@ -51,14 +53,6 @@ public:
 	typedef Fwk::Ptr<Location const> PtrConst;
 	typedef Fwk::Ptr<Location> Ptr;
 	
-	static Location::Ptr LocationNew(LocationType _locType) {
-		Ptr m = new Location(_locType);
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
-  	return m;
-	}
-	~Location();
-
 	enum LocationType {
 		undefinedLoc_ = 0,
 		customerLoc_ = 1,
@@ -72,14 +66,23 @@ public:
 	static inline LocationType undefinedLoc() { return undefinedLoc_; }
 	static inline LocationType customerLoc() { return customerLoc_; }
 	static inline LocationType portLoc() { return portLoc_; }
-	static inline LocationType terminalLoc() { return terminalLoc_; }
-		
-	virtual void segmentAdd(Segment::Ptr _segment);
-	virtual void segmentRemove(Segment::Ptr _segment);
-	inline U32 segments() const { return segments_.length(); }
-	virtual Segment::Ptr segmentAtIndex(unsigned int _index);
+	static inline LocationType boatTerminalLoc() { return boatTerminalLoc_; }
+	static inline LocationType planeTerminalLoc() { return planeTerminalLoc_; }
+	static inline LocationType truckTerminalLoc() { return truckTerminalLoc_; }
+	
+	static Location::Ptr LocationNew(LocationType _locType) {
+		Ptr m = new Location(_locType);
+  	return m;
+	}
+	~Location();
 
-	class NotifieeConst : public virtual Fwk::PtrInterface<NotifeeConst> {
+		
+	virtual void segmentAdd(Fwk::Ptr<Segment> _segment);
+	virtual void segmentRemove(Fwk::Ptr<Segment> _segment);
+	inline U32 segments() const { return segments_.size(); }
+	virtual Fwk::Ptr<Segment> segmentAtIndex(unsigned int _index);
+
+	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
 		typedef Fwk::Ptr<NotifieeConst const> PtrConst;
 		typedef Fwk::Ptr<NotifieeConst> Ptr;
@@ -93,8 +96,6 @@ public:
 		virtual void onLocationDel( Location::Ptr ) {}
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
-				m->referencesDec(1);
-				// decr. refer count to compensate for initial val of 1
 				return m;
 		}
 		// Constructors ======================================
@@ -102,8 +103,8 @@ public:
 		Location::PtrConst notifier_;
 		NotifieeConst();
 	};
-
-	class Notifiee : public virtual NotifieeConst, public virtual Fwk::PtrInterface<Notifee> {
+	//PEO
+	class Notifiee : public virtual NotifieeConst /*, public virtual Fwk::PtrInterface<Notifiee> */ {
 	public:
 		typedef Fwk::Ptr<Notifiee const> PtrConst;
 		typedef Fwk::Ptr<Notifiee> Ptr;
@@ -112,8 +113,6 @@ public:
 		// Non-const interface ==================================
 		static Notifiee::Ptr NotifieeIs() {
 			Ptr m = new Notifiee();
-				m->referencesDec(1);
-				// decr. refer count to compensate for initial val of 1
 				return m;
 		}
 	// Constructors ========================================
@@ -124,7 +123,7 @@ public:
 protected:
 	explicit Location(LocationType _locType);
 	LocationType locType_;
-	std::vector<Segment::Ptr> segments_;
+	std::vector<Fwk::Ptr<Segment> > segments_;
 };
 
 class Customer : public Location {
@@ -134,8 +133,6 @@ public:
 
 	static Customer::Ptr CustomerIs() {
 		Ptr m = new Customer();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
     return m;
 	}
 	~Customer();
@@ -150,8 +147,6 @@ public:
 	typedef Fwk::Ptr<Port> Ptr;
 	static Port::Ptr PortIs() {
 		Ptr m = new Port();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
 		return m;
 	}
 	~Port();
@@ -166,8 +161,6 @@ public:
 	typedef Fwk::Ptr<BoatTerminal> Ptr;
 	static BoatTerminal::Ptr BoatTerminalIs() {
 		Ptr m = new BoatTerminal();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
     return m;
 	}
 	~BoatTerminal();
@@ -182,8 +175,6 @@ public:
 	typedef Fwk::Ptr<PlaneTerminal> Ptr;
 	static PlaneTerminal::Ptr PlaneTerminalIs() {
 		Ptr m = new PlaneTerminal();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
 		return m;
 	}
 	~PlaneTerminal();
@@ -198,8 +189,6 @@ public:
 	typedef Fwk::Ptr<TruckTerminal> Ptr;
 	static TruckTerminal::Ptr TruckTerminalIs() {
 		Ptr m = new TruckTerminal();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
     return m;
 	}
 	~TruckTerminal();
@@ -212,24 +201,7 @@ class Segment : public Fwk::PtrInterface<Segment> {
 public:
 	typedef Fwk::Ptr<Segment const> PtrConst;
 	typedef Fwk::Ptr<Segment> Ptr;
-	static Segment::Ptr SegmentNew(SegmentType _segType) {
-		Ptr m = new Segment(_segType);
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
-    return m;
-	}
-	~Segment();
-
-	inline Location::Ptr source() const { return source_; }
-	virtual void sourceIs(Location::Ptr _loc);
-	inline Mile distance() const { return distance_; }
-	inline Segment::Ptr returnSegment() const { return returnSegment_; }
-	virtual void returnSegmentIs(Segment::Ptr _returnSegment);
-	inline Difficulty difficulty() const { return diff_; }
-	void difficultyIs(Difficulty _diff) { diff_ = _diff; }
-	inline Expedite expedite() const { return expedite_; }
-	void expediteIs(Expedite _expedite) { expedite_ = _expedite; }
-
+	
 	enum SegmentType {
 		undefinedSeg_ = 0,
 		boatSeg_ = 1,
@@ -249,13 +221,30 @@ public:
 	
 	static inline Expedite unsupported() { return unsupported_; }
 	static inline Expedite supported() { return supported_; }
+	
+	static Segment::Ptr SegmentNew(SegmentType _segType) {
+		Ptr m = new Segment(_segType);
+    return m;
+	}
+	~Segment();
 
-	class NotifieeConst : public virtual Fwk::PtrInterface<NotifeeConst> {
+	inline Location::Ptr source() const { return source_; }
+	virtual void sourceIs(Location::Ptr _loc);
+	inline Mile distance() const { return distance_; }
+	inline Segment::Ptr returnSegment() const { return returnSegment_; }
+	virtual void returnSegmentIs(Segment::Ptr _returnSegment);
+	inline Difficulty difficulty() const { return diff_; }
+	void difficultyIs(Difficulty _diff) { diff_ = _diff; }
+	inline Expedite expedite() const { return expedite_; }
+	void expediteIs(Expedite _expedite) { expedite_ = _expedite; }
+
+	
+	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
 		typedef Fwk::Ptr<NotifieeConst const> PtrConst;
 		typedef Fwk::Ptr<NotifieeConst> Ptr;
 	
-		Engine::PtrConst notifier() const { return notifier_; }
+		Segment::PtrConst notifier() const { return notifier_; }
 		// Non-const interface =================================
 		~NotifieeConst();
 		virtual void notifierIs(const Segment::PtrConst& _notifier);
@@ -268,28 +257,25 @@ public:
 		
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
-				m->referencesDec(1);
-				// decr. refer count to compensate for initial val of 1
 				return m;
 		}
 		// Constructors ======================================
 	protected:
-		Engine::PtrConst notifier_;
+		Segment::PtrConst notifier_;
 		NotifieeConst();
 	};
 	
-	class Notifiee : public virtual NotifieeConst, public virtual Fwk::PtrInterface<Notifee> {
+	//PEO
+	class Notifiee : public virtual NotifieeConst /*, public virtual Fwk::PtrInterface<Notifiee> */{
 	public:
 		typedef Fwk::Ptr<Notifiee const> PtrConst;
 		typedef Fwk::Ptr<Notifiee> Ptr;
-		Engine::PtrConst notifier() const { return NotifieeConst::notifier(); }
+		Segment::PtrConst notifier() const { return NotifieeConst::notifier(); }
 		Segment::Ptr notifier() { return const_cast<Segment *>(NotifieeConst::notifier().ptr()); }
 		// Non-const interface ==================================
 		static Notifiee::Ptr NotifieeIs() {
 			Ptr m = new Notifiee();
-				m->referencesDec(1);
-				// decr. refer count to compensate for initial val of 1
-				return m;
+			return m;
 		}
 		// Constructors ========================================
 	protected:
@@ -303,7 +289,7 @@ protected:
 	Mile distance_;
 	Segment::Ptr returnSegment_;
 	Difficulty diff_;
-	Expedite expediteSupport_;
+	Expedite expedite_;
 };
 
 
@@ -313,8 +299,6 @@ public:
 	typedef Fwk::Ptr<BoatSegment> Ptr;
 	static BoatSegment::Ptr BoatSegmentIs() {
 		Ptr m = new BoatSegment();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
     return m;
 	}
 	~BoatSegment();
@@ -330,8 +314,6 @@ public:
 	typedef Fwk::Ptr<PlaneSegment> Ptr;
 	static PlaneSegment::Ptr PlaneSegmentIs() {
 		Ptr m = new PlaneSegment();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
     return m;
 	}
 	~PlaneSegment();
@@ -347,8 +329,6 @@ public:
 	typedef Fwk::Ptr<TruckSegment> Ptr;
 	static TruckSegment::Ptr TruckSegmentIs() {
 		Ptr m = new TruckSegment();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
     return m;
 	}
 	~TruckSegment();
@@ -364,8 +344,6 @@ public:
 	typedef Fwk::Ptr<Fleet> Ptr;
 	static Fleet::Ptr FleetNew() {
 		Ptr m = new Fleet();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
     return m;	
 	}
 	~Fleet();
@@ -373,7 +351,7 @@ public:
 	void capacityIs(Capacity _capacity) { capacity_ = _capacity; }
 	inline Cost cost() const { return cost_; }
 	void costIs(Cost _cost) { cost_ = _cost; }
-	inline Speed speed() const { return capacity_; }
+	inline Speed speed() const { return speed_; }
 	void speedIs(Speed _speed) { speed_ = _speed; }
 	
 protected:
@@ -381,49 +359,36 @@ protected:
 	Capacity capacity_;
 	Cost cost_;
 	Speed speed_;
-}
+};
 
-class Stats : public Engine::Notifee {
+
+
+class Path : public Fwk::PtrInterface<Path> {
 public:
-	typedef Fwk::Ptr<Stats const> PtrConst;
-	typedef Fwk::Ptr<Stats> Ptr;
-	static Stats::Ptr StatsNew(Engine* eng) {
-		Ptr m = new Stats(eng);
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
-    return m;
+	typedef Fwk::Ptr<Path const> PtrConst;
+	typedef Fwk::Ptr<Path> Ptr;
+	static Path::Ptr PathNew() {
+		Ptr m = new Path();
+    return m;	
 	}
-	~Stats();
-	inline U32 customers() const { return customers_; }
-	inline U32 ports() const { return ports_; }
-	inline U32 boatTerminals const { return boatTerminals_; }
-	inline U32 planeTerminals const { return planeTerminals_; }
-	inline U32 truckTerminals const { return truckTerminals_; }
-	inline U32 boatSegments const { return boatSegments_; }
-	inline U32 planeSegments const { return planeSegments_; }
-	inline U32 truckSegments const { return truckSegments_; }
-	inline U32 expediteSegments const { return expediteSegments_; }
-	inline float expeditePercentage const { return ((float)expediteSegments)/(boatSegments_ + planeSegments_ + truckSegments_); }
+	static Path::Ptr PathNew(Path::Ptr _path);
+	~Path();
+
+	Mile distance() { return distance_; }
+	Cost cost() { return cost_; }
+	Time time() { return time_; }
+	Segment::Expedite expedited() { return expedited_; }
 	
-	void onLocationNew( Location::Ptr loc );
-	void onSegmentNew( Segment::Ptr seg );
-  void onSegmentExpediteChange( Segment::Ptr seg, Expedite oldExp );
-
+	void segmentAdd(Segment::Ptr _segment);
+	U32 segments(){ return segments_.size(); }
+	std::string toString();
 protected:
-	Stats(Engine *eng) : Engine::Notifiee() {
-		notifierIs(eng);
-	}
-
-	U32 customers_;
-	U32 ports_;
-	U32 boatTerminals_;
-	U32 planeTerminals_;
-	U32 truckTerminals_;
-	U32 boatSegments_;
-	U32 planeSegments_;
-	U32 truckSegments_;
-	U32 expediteSegments_;
-	float expeditePercentage_;
+	explicit Path();
+	Mile distance_;
+	Cost cost_;
+	Time time_;
+	Segment::Expedite expedited_;
+	std::vector<Segment::Ptr> segments_;
 };
 
 class Conn : public Fwk::PtrInterface<Conn> {
@@ -432,8 +397,6 @@ public:
 	typedef Fwk::Ptr<Conn> Ptr;
 	static Conn::Ptr ConnNew() {
 		Ptr m = new Conn();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
 	  return m;	
 	}
 	~Conn();
@@ -444,38 +407,7 @@ protected:
 	explicit Conn();
 };
 
-class Path : public Fwk::PtrInterface<Path> {
-public:
-	typedef Fwk::Ptr<Path const> PtrConst;
-	typedef Fwk::Ptr<Path> Ptr;
-	static Path::Ptr PathNew() {
-			Ptr m = new Path();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
-    return m;	
-	}
-	static Path::Ptr PathNew(Path::Ptr _path);
-	~Path();
-
-	Distance distance() { return distance_; }
-	Cost cost() { return cost_; }
-	Time time() { return time_; }
-	Segment::Expedite expedited() { return expedited_; }
-	
-	void segmentAdd(Segment::Ptr _segment);
-	U32 segments(){ return segments_.length(); }
-	std::string toString();
-protected:
-	explicit Path();
-	Segment::Expedite expedited_;
-	Distance distance_;
-	Cost cost_;
-	Time time_;
-	Segment::Expedite expedited_;
-	std::list<Segment::Ptr> segments_;
-};
-
-
+class Engine;
 
 class LocationReactor : public Location::Notifiee {
 public:
@@ -523,8 +455,6 @@ public:
 	/* note: constructor must instantiate fleets & stats */
 	static Engine::Ptr EngineNew() {
 		Ptr m = new Engine();
-		m->referencesDec(1);
-		// decr. refer count to compensate for initial val of 1
     return m;	
 	}
 	~Engine();
@@ -536,7 +466,7 @@ public:
 	inline Fleet::Ptr planeFleet() const { return planeFleet_; }
 	inline Fleet::Ptr truckFleet() const { return truckFleet_; }
 	
-	class NotifieeConst : public virtual Fwk::PtrInterface<NotifeeConst> {
+	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
 		typedef Fwk::Ptr<NotifieeConst const> PtrConst;
 		typedef Fwk::Ptr<NotifieeConst> Ptr;
@@ -552,8 +482,6 @@ public:
 		virtual void onSegmentExpedite( Segment::Ptr seg ) {}
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
-				m->referencesDec(1);
-				// decr. refer count to compensate for initial val of 1
 				return m;
 		}
 		// Constructors ======================================
@@ -562,17 +490,16 @@ public:
 		NotifieeConst();
 	};
 	
-	class Notifiee : public virtual NotifieeConst, public virtual Fwk::PtrInterface<Notifee> {
+	//PEO
+	class Notifiee : public virtual NotifieeConst /*, public virtual Fwk::PtrInterface<Notifiee> */ {
 	public:
 		typedef Fwk::Ptr<Notifiee const> PtrConst;
 		typedef Fwk::Ptr<Notifiee> Ptr;
 		Engine::PtrConst notifier() const { return NotifieeConst::notifier(); }
-		Segment::Ptr notifier() { return const_cast<Engine *>(NotifieeConst::notifier().ptr()); }
+		Engine::Ptr notifier() { return const_cast<Engine *>(NotifieeConst::notifier().ptr()); }
 		// Non-const interface ==================================
 		static Notifiee::Ptr NotifieeIs() {
 			Ptr m = new Notifiee();
-				m->referencesDec(1);
-				// decr. refer count to compensate for initial val of 1
 				return m;
 		}
 		// Constructors ========================================
@@ -587,6 +514,48 @@ protected:
 	Fleet::Ptr boatFleet_;
 	Fleet::Ptr planeFleet_;
 	Fleet::Ptr truckFleet_;	
+};
+
+
+class Stats : public Engine::Notifiee {
+public:
+	typedef Fwk::Ptr<Stats const> PtrConst;
+	typedef Fwk::Ptr<Stats> Ptr;
+	static Stats::Ptr StatsNew(Engine* eng) {
+		Ptr m = new Stats(eng);
+    return m;
+	}
+	~Stats();
+	inline U32 customers() const { return customers_; }
+	inline U32 ports() const { return ports_; }
+	inline U32 boatTerminals() const { return boatTerminals_; }
+	inline U32 planeTerminals() const { return planeTerminals_; }
+	inline U32 truckTerminals() const { return truckTerminals_; }
+	inline U32 boatSegments() const { return boatSegments_; }
+	inline U32 planeSegments() const { return planeSegments_; }
+	inline U32 truckSegments() const { return truckSegments_; }
+	inline U32 expediteSegments() const { return expediteSegments_; }
+	inline float expeditePercentage() const { return ((float)expediteSegments_)/(boatSegments_ + planeSegments_ + truckSegments_); }
+	
+	void onLocationNew( Location::Ptr loc );
+	void onSegmentNew( Segment::Ptr seg );
+  void onSegmentExpedite( Segment::Ptr seg );
+
+protected:
+	Stats(Engine *eng) : Engine::Notifiee() {
+		notifierIs(eng);
+	}
+
+	U32 customers_;
+	U32 ports_;
+	U32 boatTerminals_;
+	U32 planeTerminals_;
+	U32 truckTerminals_;
+	U32 boatSegments_;
+	U32 planeSegments_;
+	U32 truckSegments_;
+	U32 expediteSegments_;
+	float expeditePercentage_;
 };
 
 
