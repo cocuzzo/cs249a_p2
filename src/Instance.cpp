@@ -12,9 +12,6 @@ using namespace std;
 /**********************************************************************************
 ** Rep Layer Class Definitions 
 **********************************************************************************/
-class StatsRep;
-class ConnRep;
-class FleetRep;
 
 class ManagerImpl : public Instance::Manager {
 public:
@@ -28,13 +25,16 @@ public:
 
   // Manager method
   void instanceDel(const string& name);
+  
+  Engine::Ptr engine(){ return engine_; }
+
 
 private:
   map<string,Ptr<Instance> > instance_;
-  
-  Ptr<StatsRep> statsRep;
-  Ptr<ConnRep> connRep;
-  Ptr<FleetRep> fleetRep;
+  Engine::Ptr engine_;
+  string statsName_;
+  string connName_;
+  string fleetName_;
 };
 
 class LocationRep : public Instance {
@@ -162,31 +162,43 @@ public:
 class StatsRep : public Instance {
 public:
 
-	StatsRep(const string& name, ManagerImpl* manager);
+	StatsRep(const string& name, ManagerImpl* manager) :
+		Instance(name), manager_(manager) {
+		stats_ = Stats::StatsNew(manager_->engine().ptr());
+	}
 	string attribute(const string& name);
 	void attributeIs(const string& name, const string& v);
 	
 private:
-	
+	Ptr<ManagerImpl> manager_;
+	Stats::Ptr stats_;
 };
+
 class ConnRep : public Instance {
 public:
 
-	ConnRep(const string& name, ManagerImpl* manager);
+	ConnRep(const string& name, ManagerImpl* manager) :
+		Instance(name), manager_(manager) { 
+	}
 	string attribute(const string& name);
 	void attributeIs(const string& name, const string& v);
 	
 private:
+	Ptr<ManagerImpl> manager_;
 	
 };
 class FleetRep : public Instance {
 public:
 
-	FleetRep(const string& name, ManagerImpl* manager);
+	FleetRep(const string& name, ManagerImpl* manager) :
+		Instance(name), manager_(manager) { 
+	}
+	
 	string attribute(const string& name);
 	void attributeIs(const string& name, const string& v);
 	
 private:
+	Ptr<ManagerImpl> manager_;
 	
 };
 
@@ -195,9 +207,18 @@ private:
 ** Rep Layer Class Implementation 
 **********************************************************************************/
 
-ManagerImpl::ManagerImpl() { }
+/* Manager */
+
+ManagerImpl::ManagerImpl() { 
+	engine_ = Engine::EngineNew();
+
+}
 
 Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
+	if(instance_.find(name) == instance_.end()){
+		cerr << "Error: Already have instance named " << name << endl;
+	}
+	
 	if (type == "Customer") {
   	Ptr<CustomerRep> t = new CustomerRep(name, this);
     instance_[name] = t;
@@ -239,44 +260,75 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
     return t;
   }
   else if (type == "Stats") {
-  	instance_[name] = statsRep;
-    return statsRep;
+  	if( "" == statsName_ ){
+  		Ptr<StatsRep> t = new StatsRep(name, this);
+  		instance_[name] = t;
+  		statsName_ = name;
+  	}
+  	else {
+  		cerr << "Error: Only 1 allowed stats instance, returning stats instance named " 
+  				 << statsName_ << endl;
+  	}
+    return instance_[statsName_];
   }
   else if (type == "Conn") {
-    instance_[name] = connRep;
-    return connRep;
-  }
+  	if( "" == connName_ ){
+    	Ptr<ConnRep> t = new ConnRep(name, this);
+    	instance_[name] = t;
+    	connName_ = name;
+ 	 	}
+ 	 	else {
+ 	 		cerr << "Error: Only 1 allowed conn instance, returning conn instance named " 
+  				 << connName_ << endl;
+  	}
+ 		return instance_[connName_];
+ 	}
   else if (type == "Fleet") {
-    instance_[name] = fleetRep;
-    return fleetRep;
+    if( "" == fleetName_ ){
+    	Ptr<FleetRep> t = new FleetRep(name, this);
+    	instance_[name] = t;
+    	fleetName_ = name;
+ 	 	}
+ 	 	else {
+ 	 		cerr << "Error: Only 1 allowed fleet instance, returning fleet instance named " 
+  				 << fleetName_ << endl;
+  	}
+ 		return instance_[fleetName_];
   }
   else{
+  	cerr << "Error: Invalid instance type " << type << endl;
   	return NULL;
   }
 }
 
 Ptr<Instance> ManagerImpl::instance(const string& name) {
   map<string,Ptr<Instance> >::const_iterator t = instance_.find(name);
-
   return t == instance_.end() ? NULL : (*t).second;
 }
 
 void ManagerImpl::instanceDel(const string& name) {
-
+	if(instance_.find(name) == instance_.end()){
+		cerr << "Error: No instance named " << name << endl; 
+  	return;
+	}
+	instance_.erase(name);
+	if(statsName_ == name) statsName_ = "";
+	else if(connName_ == name) connName_ = "";
+	else if(fleetName_ == name) fleetName_ = "";
+	
 }
 
+/* Location Rep */
 
 string LocationRep::attribute(const string& name) {
 	int i = segmentNumber(name);
-	if (i != 0) {
-  	cout << "Tried to read interface " << i;
-  }
+	
 	return "";
 }
 
 
 void LocationRep::attributeIs(const string& name, const string& v) {
-   //nothing to do
+   //nothing to do, has no writable attributes
 }
 
 static const string segmentStr = "segment";
@@ -290,8 +342,14 @@ int LocationRep::segmentNumber(const string& name) {
   return 0;
 }
 
+/* Segment */
 
-}
+
+
+
+
+
+} //end shipping namespace
 
 /*
  * This is the entry point for your library.
