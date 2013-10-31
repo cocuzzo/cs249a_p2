@@ -1,6 +1,6 @@
 CXXFLAGS = -Wall -g -std=c++0x
 
-OBJECTS = Instance.o
+OBJECTS = Instance.o Engine.o
 
 default:	test1 example
 
@@ -12,6 +12,6 @@ example:	example.o $(OBJECTS)
 
 clean:
 	rm -f test1 test1.o $(OBJECTS) *~
-
+Engine.o: Engine.cpp Engine.h PtrInterface.h Ptr.h
 Instance.o: Instance.cpp Instance.h PtrInterface.h Ptr.h Engine.h
-test1.o: test1.cpp Instance.h PtrInterface.h Ptr.h
+test1.o: test1.cpp Instance.h Engine.h PtrInterface.h Ptr.h

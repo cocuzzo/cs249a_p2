@@ -322,7 +322,7 @@ void ManagerImpl::instanceDel(const string& name) {
 
 string LocationRep::attribute(const string& name) {
 	int i = segmentNumber(name);
-	
+	int d = i; //placeholder for warning
 	return "";
 }
 

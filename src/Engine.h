@@ -17,33 +17,33 @@ namespace Shipping {
 // ordinal types
 class Mile : public Ordinal<Mile, unsigned int> {
 public:
-	Mile(unsigned int num) : Ordinal<Mile, unsigned int>(num){}
+	Mile(unsigned int num = 0) : Ordinal<Mile, unsigned int>(num){}
 };
 
 class Difficulty : public Ordinal<Difficulty, float> {
 public:
-	Difficulty(float num) : Ordinal<Difficulty, float>(num){}
+	Difficulty(float num = 1.0) : Ordinal<Difficulty, float>(num){}
 };
 
 class Speed : public Ordinal<Speed, float> {
 public:
-	Speed(float num) : Ordinal<Speed, float>(num){}
+	Speed(float num = 0.0) : Ordinal<Speed, float>(num){}
 };
 
 class Cost : public Ordinal<Cost, float> {
 public:
-	Cost(float num) : Ordinal<Cost, float>(num){}
+	Cost(float num = 0.0) : Ordinal<Cost, float>(num){}
 };
 
 class Capacity : public Ordinal<Capacity, float> {
 public:
-	Capacity(float num) : Ordinal<Capacity, float>(num){}
+	Capacity(float num = 0.0) : Ordinal<Capacity, float>(num){}
 
 };
 
 class Time : public Ordinal<Time, unsigned int> {
 public:
-	Time(unsigned int num) : Ordinal<Time, unsigned int>(num){}
+	Time(unsigned int num = 0) : Ordinal<Time, unsigned int>(num){}
 };
 
 class Segment; //Location needs to know about Segments before decl
@@ -74,7 +74,6 @@ public:
 		Ptr m = new Location(_locType);
   	return m;
 	}
-	~Location();
 
 		
 	virtual void segmentAdd(Fwk::Ptr<Segment> _segment);
@@ -135,10 +134,10 @@ public:
 		Ptr m = new Customer();
     return m;
 	}
-	~Customer();
+	
 	
 protected:
-	explicit Customer();
+	Customer();
 };
 
 class Port : public Location {
@@ -149,10 +148,10 @@ public:
 		Ptr m = new Port();
 		return m;
 	}
-	~Port();
+	
 	
 protected:
-	explicit Port();
+	Port();
 };
 
 class BoatTerminal : public Location {
@@ -163,10 +162,10 @@ public:
 		Ptr m = new BoatTerminal();
     return m;
 	}
-	~BoatTerminal();
+	
 	
 protected:
-	explicit BoatTerminal();
+	BoatTerminal();
 };
 
 class PlaneTerminal : public Location {
@@ -177,10 +176,10 @@ public:
 		Ptr m = new PlaneTerminal();
 		return m;
 	}
-	~PlaneTerminal();
+	
 	
 protected:
-	explicit PlaneTerminal();
+	PlaneTerminal();
 };
 
 class TruckTerminal : public Location {
@@ -191,10 +190,10 @@ public:
 		Ptr m = new TruckTerminal();
     return m;
 	}
-	~TruckTerminal();
+	
 	
 protected:
-	explicit TruckTerminal();
+	TruckTerminal();
 };
 
 class Segment : public Fwk::PtrInterface<Segment> {
@@ -226,7 +225,7 @@ public:
 		Ptr m = new Segment(_segType);
     return m;
 	}
-	~Segment();
+	
 
 	inline Location::Ptr source() const { return source_; }
 	virtual void sourceIs(Location::Ptr _loc);
@@ -301,10 +300,10 @@ public:
 		Ptr m = new BoatSegment();
     return m;
 	}
-	~BoatSegment();
+	
 	
 protected:
-	explicit BoatSegment();
+	BoatSegment();
 
 };
 
@@ -316,10 +315,10 @@ public:
 		Ptr m = new PlaneSegment();
     return m;
 	}
-	~PlaneSegment();
+	
 	
 protected:	
-	explicit PlaneSegment();
+	PlaneSegment();
 
 };
 
@@ -331,10 +330,10 @@ public:
 		Ptr m = new TruckSegment();
     return m;
 	}
-	~TruckSegment();
+	
 
 protected:
-	explicit TruckSegment();
+	TruckSegment();
 };
 
 
@@ -346,7 +345,7 @@ public:
 		Ptr m = new Fleet();
     return m;	
 	}
-	~Fleet();
+	
 	inline Capacity capacity() const { return capacity_; }
 	void capacityIs(Capacity _capacity) { capacity_ = _capacity; }
 	inline Cost cost() const { return cost_; }
@@ -355,7 +354,8 @@ public:
 	void speedIs(Speed _speed) { speed_ = _speed; }
 	
 protected:
-	explicit Fleet();
+	Fleet(){ }
+	
 	Capacity capacity_;
 	Cost cost_;
 	Speed speed_;
@@ -372,7 +372,6 @@ public:
     return m;	
 	}
 	static Path::Ptr PathNew(Path::Ptr _path);
-	~Path();
 
 	Mile distance() { return distance_; }
 	Cost cost() { return cost_; }
@@ -383,7 +382,8 @@ public:
 	U32 segments(){ return segments_.size(); }
 	std::string toString();
 protected:
-	explicit Path();
+	Path() { }
+	
 	Mile distance_;
 	Cost cost_;
 	Time time_;
@@ -399,20 +399,19 @@ public:
 		Ptr m = new Conn();
 	  return m;	
 	}
-	~Conn();
 	std::vector<Path::Ptr> ConstrainedGraph(Location::Ptr loc, Mile distance, Cost cost, Time time, Segment::Expedite expedited);
 	std::vector<Path::Ptr> Connections(Location::Ptr start, Location::Ptr end);
 
 protected:
-	explicit Conn();
+	Conn() { }
 };
 
 class Engine;
 
 class LocationReactor : public Location::Notifiee {
 public:
-	void onLocationNew(Location::Ptr loc);
-	void onLocationDel(Location::Ptr loc); 
+	void onLocationNew();
+	void onLocationDel(); 
 
 	static LocationReactor * LocationReactorIs(Location *loc, Engine* owner) {
 		LocationReactor *m = new LocationReactor(loc, owner);
@@ -428,11 +427,11 @@ protected:
 
 class SegmentReactor : public Segment::Notifiee {
 public:
-	void onSegmentNew(Segment::Ptr seg);
-	void onSegmentDel(Segment::Ptr seg);
-	void onSegmentSource(Segment::Ptr seg);
-	void onSegmentReturn(Segment::Ptr seg);
-	void onSegmentExpedite(Segment::Ptr seg); 
+	void onSegmentNew();
+	void onSegmentDel();
+	void onSegmentSource();
+	void onSegmentReturn();
+	void onSegmentExpedite(); 
 
 	static SegmentReactor * SegmentReactorIs(Segment* seg, Engine* owner) {
 		SegmentReactor *m = new SegmentReactor(seg, owner);
@@ -508,7 +507,8 @@ public:
 	};
 
 protected:
-	explicit Engine();
+	Engine() { }
+	
 	std::vector<LocationReactor::Ptr> locReactors;
 	std::vector<SegmentReactor::Ptr> segReactors;
 	Fleet::Ptr boatFleet_;
