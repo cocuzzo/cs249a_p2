@@ -104,7 +104,7 @@ Location::Ptr Engine::locationNew(std::string name, Location::LocationType _loca
 }
 Segment::Ptr Engine::segmentNew(std::string name, Segment::SegmentType _segmentType){
 
-	return NULL; //palceholder
+	return NULL; //placeholder
 }
 
 /******************************************************************************

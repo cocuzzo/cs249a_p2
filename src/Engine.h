@@ -91,8 +91,8 @@ public:
 		~NotifieeConst();
 		virtual void notifierIs(const Location::PtrConst& _notifier);
 		
-		virtual void onLocationNew( Location::Ptr ) {}
-		virtual void onLocationDel( Location::Ptr ) {}
+		virtual void onLocationNew( Location::Ptr loc ) {}
+		virtual void onLocationDel( Location::Ptr loc ) {}
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
 				return m;
@@ -248,11 +248,11 @@ public:
 		~NotifieeConst();
 		virtual void notifierIs(const Segment::PtrConst& _notifier);
   
-		virtual void onSegmentNew( Segment::Ptr ) {}
-    virtual void onSegmentDel( Segment::Ptr ) {}
-    virtual void onSegmentSource( Segment::Ptr ) {}
-		virtual void onSegmentReturn( Segment::Ptr ) {}
-		virtual void onSegmentExpedite( Segment::Ptr ) {}
+		virtual void onSegmentNew() {}
+    virtual void onSegmentDel() {}
+    virtual void onSegmentSource() {}
+		virtual void onSegmentReturn() {}
+		virtual void onSegmentExpedite() {}
 		
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
