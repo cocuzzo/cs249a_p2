@@ -13,6 +13,10 @@ using namespace std;
 ** Rep Layer Class Definitions 
 **********************************************************************************/
 
+class StatsRep;
+class FleetRep;
+class ConnRep;
+
 class ManagerImpl : public Instance::Manager {
 public:
 	ManagerImpl();
@@ -31,14 +35,19 @@ public:
 
 private:
   map<string,Ptr<Instance> > instance_;
+  
   Engine::Ptr engine_;
-  string statsName_;
-  string connName_;
-  string fleetName_;
+  
+  Ptr<StatsRep> statsRep_;
+  Ptr<FleetRep> fleetRep_;
+  Ptr<ConnRep> connRep_;
+  
 };
 
 class LocationRep : public Instance {
 public:
+	//typedef Fwk::Ptr<LocationRep const> PtrConst;
+	//typedef Fwk::Ptr<LocationRep> Ptr;
 
 	LocationRep(const string& name, ManagerImpl* manager) :
 		Instance(name), manager_(manager)
@@ -61,12 +70,18 @@ private:
 
 class CustomerRep : public LocationRep {
 public:
+	//typedef Fwk::Ptr<CustomerRep const> PtrConst;
+	//typedef Fwk::Ptr<CustomerRep> Ptr;
+	
 	CustomerRep(const string& name, ManagerImpl *manager):
 		LocationRep(name, manager){ }
 };
 
 class PortRep : public LocationRep {
 public:
+	//typedef Fwk::Ptr<PortRep const> PtrConst;
+	//typedef Fwk::Ptr<PortRep> Ptr;
+	
 	PortRep(const string& name, ManagerImpl *manager) :
 		LocationRep(name, manager){ }
 };
@@ -74,7 +89,9 @@ public:
                                                                                                
 class TruckTerminalRep : public LocationRep {
 public:
-
+	//typedef Fwk::Ptr<TruckTerminalRep const> PtrConst;
+	//typedef Fwk::Ptr<TruckTerminalRep> Ptr;
+	
   TruckTerminalRep(const string& name, ManagerImpl *manager) :
   	LocationRep(name, manager)
   {
@@ -85,7 +102,9 @@ public:
 
 class BoatTerminalRep : public LocationRep {
 public:
-
+	//typedef Fwk::Ptr<BoatTerminalRep const> PtrConst;
+	//typedef Fwk::Ptr<BoatTerminalRep> Ptr;
+	
   BoatTerminalRep(const string& name, ManagerImpl *manager) :
   	LocationRep(name, manager)
   {
@@ -96,7 +115,9 @@ public:
 
 class PlaneTerminalRep : public LocationRep {
 public:
-
+	//typedef Fwk::Ptr<PlaneTerminalRep const> PtrConst;
+	//typedef Fwk::Ptr<PlaneTerminalRep> Ptr;
+	
   PlaneTerminalRep(const string& name, ManagerImpl *manager) :
   	LocationRep(name, manager)
   {
@@ -107,7 +128,9 @@ public:
 
 class SegmentRep : public Instance {
 public:
-
+	//typedef Fwk::Ptr<SegmentRep const> PtrConst;
+	//typedef Fwk::Ptr<SegmentRep> Ptr;
+	
 	SegmentRep(const string& name, ManagerImpl* manager) :
 		Instance(name), manager_(manager)
 	{
@@ -128,7 +151,9 @@ private:
 
 class TruckSegmentRep : public SegmentRep {
 public:
-
+	//typedef Fwk::Ptr<TruckSegmentRep const> PtrConst;
+	//typedef Fwk::Ptr<TruckSegmentRep> Ptr;
+	
   TruckSegmentRep(const string& name, ManagerImpl *manager) :
   	SegmentRep(name, manager)
   {
@@ -139,7 +164,9 @@ public:
 
 class BoatSegmentRep : public SegmentRep {
 public:
-
+	//typedef Fwk::Ptr<BoatSegmentRep const> PtrConst;
+	//typedef Fwk::Ptr<BoatSegmentRep> Ptr;
+	
   BoatSegmentRep(const string& name, ManagerImpl *manager) :
   	SegmentRep(name, manager)
   {
@@ -150,7 +177,9 @@ public:
 
 class PlaneSegmentRep : public SegmentRep {
 public:
-
+	//typedef Fwk::Ptr<PlaneSegmentRep const> PtrConst;
+	//typedef Fwk::Ptr<PlaneSegmentRep> Ptr;
+	
   PlaneSegmentRep(const string& name, ManagerImpl *manager) :
   	SegmentRep(name, manager)
   {
@@ -161,7 +190,9 @@ public:
 
 class StatsRep : public Instance {
 public:
-
+	//typedef Fwk::Ptr<StatsRep const> PtrConst;
+	//typedef Fwk::Ptr<StatsRep> Ptr;
+	
 	StatsRep(const string& name, ManagerImpl* manager) :
 		Instance(name), manager_(manager) {
 		stats_ = Stats::StatsNew(manager_->engine().ptr());
@@ -176,7 +207,9 @@ private:
 
 class ConnRep : public Instance {
 public:
-
+	//typedef Fwk::Ptr<ConnRep const> PtrConst;
+	//typedef Fwk::Ptr<ConnRep> Ptr;
+	
 	ConnRep(const string& name, ManagerImpl* manager) :
 		Instance(name), manager_(manager) { 
 	}
@@ -189,7 +222,9 @@ private:
 };
 class FleetRep : public Instance {
 public:
-
+	//typedef Fwk::Ptr<FleetRep const> PtrConst;
+	//typedef Fwk::Ptr<FleetRep> Ptr;
+	
 	FleetRep(const string& name, ManagerImpl* manager) :
 		Instance(name), manager_(manager) { 
 	}
@@ -211,10 +246,13 @@ private:
 
 ManagerImpl::ManagerImpl() { 
 	engine_ = Engine::EngineNew();
-
+	statsRep_ = new StatsRep("", this);
+	fleetRep_ = new FleetRep("", this);
+	connRep_ = new ConnRep("", this);
 }
 
 Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
+	/*
 	if(instance_.find(name) == instance_.end()){
 		cerr << "Error: Already have instance named " << name << endl;
 	}
@@ -299,6 +337,8 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
   	cerr << "Error: Invalid instance type " << type << endl;
   	return NULL;
   }
+  */
+  return NULL;
 }
 
 Ptr<Instance> ManagerImpl::instance(const string& name) {
@@ -307,6 +347,7 @@ Ptr<Instance> ManagerImpl::instance(const string& name) {
 }
 
 void ManagerImpl::instanceDel(const string& name) {
+	/*
 	if(instance_.find(name) == instance_.end()){
 		cerr << "Error: No instance named " << name << endl; 
   	return;
@@ -315,14 +356,14 @@ void ManagerImpl::instanceDel(const string& name) {
 	if(statsName_ == name) statsName_ = "";
 	else if(connName_ == name) connName_ = "";
 	else if(fleetName_ == name) fleetName_ = "";
-	
+	*/
 }
 
-/* Location Rep */
+/* LocationRep Impl */
 
 string LocationRep::attribute(const string& name) {
-	int i = segmentNumber(name);
-	int d = i; //placeholder for warning
+	//int i = segmentNumber(name);
+	
 	return "";
 }
 
@@ -342,11 +383,55 @@ int LocationRep::segmentNumber(const string& name) {
   return 0;
 }
 
-/* Segment */
+/* SegmentRep Impl */
+
+string SegmentRep::attribute(const string& name){
+
+	return "";
+}
+
+
+void SegmentRep::attributeIs(const string& name, const string& v){
 
 
 
+}
 
+/* StatsRep Impl */
+
+string StatsRep::attribute(const string& name){
+
+	return "";
+}
+
+void StatsRep::attributeIs(const string& name, const string& v){
+
+
+}
+
+/* FleetRep Impl */
+
+string FleetRep::attribute(const string& name){
+
+	return "";
+}
+
+void FleetRep::attributeIs(const string& name, const string& v){
+
+	
+}
+
+/* ConnRep Impl */
+
+string ConnRep::attribute(const string& name){
+
+	return "";
+}
+
+void ConnRep::attributeIs(const string& name, const string& v){
+
+
+}
 
 
 } //end shipping namespace
