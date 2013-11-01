@@ -39,8 +39,11 @@ private:
   Engine::Ptr engine_;
   
   Ptr<StatsRep> statsRep_;
+  string statsName_;
   Ptr<FleetRep> fleetRep_;
+  string fleetName_;
   Ptr<ConnRep> connRep_;
+  string connName_;
   
 };
 
@@ -49,10 +52,11 @@ public:
 	//typedef Fwk::Ptr<LocationRep const> PtrConst;
 	//typedef Fwk::Ptr<LocationRep> Ptr;
 
-	LocationRep(const string& name, ManagerImpl* manager) :
+	LocationRep(const string& name, ManagerImpl* manager, Location::LocationType type) :
 		Instance(name), manager_(manager)
 	{
-		// Nothing else to do.
+		Engine::Ptr eng = manager_->engine();
+		loc_ = eng->locationNew(name, type);
 	}
 
 	// Instance method
@@ -63,8 +67,9 @@ public:
 
 private:
   Ptr<ManagerImpl> manager_;
-
-	int segmentNumber(const string& name);
+	Location::Ptr loc_;
+	
+	unsigned int segmentNumber(const string& name);
 
 };
 
@@ -74,7 +79,7 @@ public:
 	//typedef Fwk::Ptr<CustomerRep> Ptr;
 	
 	CustomerRep(const string& name, ManagerImpl *manager):
-		LocationRep(name, manager){ }
+		LocationRep(name, manager, Location::customerLoc() ){ }
 };
 
 class PortRep : public LocationRep {
@@ -83,7 +88,7 @@ public:
 	//typedef Fwk::Ptr<PortRep> Ptr;
 	
 	PortRep(const string& name, ManagerImpl *manager) :
-		LocationRep(name, manager){ }
+		LocationRep(name, manager, Location::portLoc() ){ }
 };
 
                                                                                                
@@ -93,7 +98,7 @@ public:
 	//typedef Fwk::Ptr<TruckTerminalRep> Ptr;
 	
   TruckTerminalRep(const string& name, ManagerImpl *manager) :
-  	LocationRep(name, manager)
+  	LocationRep(name, manager, Location::truckTerminalLoc() )
   {
   	// Nothing else to do.
   }
@@ -106,7 +111,7 @@ public:
 	//typedef Fwk::Ptr<BoatTerminalRep> Ptr;
 	
   BoatTerminalRep(const string& name, ManagerImpl *manager) :
-  	LocationRep(name, manager)
+  	LocationRep(name, manager, Location::boatTerminalLoc() )
   {
   	// Nothing else to do.
   }
@@ -119,7 +124,7 @@ public:
 	//typedef Fwk::Ptr<PlaneTerminalRep> Ptr;
 	
   PlaneTerminalRep(const string& name, ManagerImpl *manager) :
-  	LocationRep(name, manager)
+  	LocationRep(name, manager, Location::planeTerminalLoc() )
   {
   	// Nothing else to do.
   }
@@ -131,10 +136,11 @@ public:
 	//typedef Fwk::Ptr<SegmentRep const> PtrConst;
 	//typedef Fwk::Ptr<SegmentRep> Ptr;
 	
-	SegmentRep(const string& name, ManagerImpl* manager) :
+	SegmentRep(const string& name, ManagerImpl* manager, Segment::SegmentType type) :
 		Instance(name), manager_(manager)
 	{
-		// Nothing else to do.
+		Engine::Ptr eng = manager_->engine();
+		seg_ = eng->segmentNew(name, type);
 	}
 
 	// Instance method
@@ -145,7 +151,7 @@ public:
 
 private:
   Ptr<ManagerImpl> manager_;
-
+	Segment::Ptr seg_;
 
 };
 
@@ -155,7 +161,7 @@ public:
 	//typedef Fwk::Ptr<TruckSegmentRep> Ptr;
 	
   TruckSegmentRep(const string& name, ManagerImpl *manager) :
-  	SegmentRep(name, manager)
+  	SegmentRep(name, manager, Segment::truckSeg() )
   {
   	// Nothing else to do.
   }
@@ -168,7 +174,7 @@ public:
 	//typedef Fwk::Ptr<BoatSegmentRep> Ptr;
 	
   BoatSegmentRep(const string& name, ManagerImpl *manager) :
-  	SegmentRep(name, manager)
+  	SegmentRep(name, manager, Segment::boatSeg() )
   {
   	// Nothing else to do.
   }
@@ -181,7 +187,7 @@ public:
 	//typedef Fwk::Ptr<PlaneSegmentRep> Ptr;
 	
   PlaneSegmentRep(const string& name, ManagerImpl *manager) :
-  	SegmentRep(name, manager)
+  	SegmentRep(name, manager, Segment::planeSeg() )
   {
   	// Nothing else to do.
   }
@@ -246,14 +252,19 @@ private:
 
 ManagerImpl::ManagerImpl() { 
 	engine_ = Engine::EngineNew();
-	statsRep_ = new StatsRep("", this);
-	fleetRep_ = new FleetRep("", this);
-	connRep_ = new ConnRep("", this);
+	statsRep_ = new StatsRep("StatsRep", this);
+	fleetRep_ = new FleetRep("FleetRep", this);
+	connRep_ = new ConnRep("ConnRep", this);
 }
 
 Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
-	/*
-	if(instance_.find(name) == instance_.end()){
+	
+	if(instance_.find(name) != instance_.end() ||
+		 name == statsName_ || 
+		 name == fleetName_ ||
+		 name == connName_ )
+	{
+			
 		cerr << "Error: Already have instance named " << name << endl;
 	}
 	
@@ -299,72 +310,77 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
   }
   else if (type == "Stats") {
   	if( "" == statsName_ ){
-  		Ptr<StatsRep> t = new StatsRep(name, this);
-  		instance_[name] = t;
+  		instance_[name] = statsRep_;
   		statsName_ = name;
   	}
   	else {
   		cerr << "Error: Only 1 allowed stats instance, returning stats instance named " 
   				 << statsName_ << endl;
   	}
-    return instance_[statsName_];
+    return statsRep_;
   }
   else if (type == "Conn") {
   	if( "" == connName_ ){
-    	Ptr<ConnRep> t = new ConnRep(name, this);
-    	instance_[name] = t;
+    	instance_[name] = connRep_;
     	connName_ = name;
  	 	}
  	 	else {
  	 		cerr << "Error: Only 1 allowed conn instance, returning conn instance named " 
   				 << connName_ << endl;
   	}
- 		return instance_[connName_];
+ 		return connRep_;
  	}
   else if (type == "Fleet") {
     if( "" == fleetName_ ){
-    	Ptr<FleetRep> t = new FleetRep(name, this);
-    	instance_[name] = t;
+    	instance_[name] = fleetRep_;
     	fleetName_ = name;
  	 	}
  	 	else {
  	 		cerr << "Error: Only 1 allowed fleet instance, returning fleet instance named " 
   				 << fleetName_ << endl;
   	}
- 		return instance_[fleetName_];
+ 		return fleetRep_;
   }
   else{
   	cerr << "Error: Invalid instance type " << type << endl;
   	return NULL;
   }
-  */
+  
   return NULL;
 }
 
 Ptr<Instance> ManagerImpl::instance(const string& name) {
+	if(name == statsName_) return statsRep_;
+	else if(name == fleetName_) return fleetRep_;
+	else if(name == connName_) return connRep_;
   map<string,Ptr<Instance> >::const_iterator t = instance_.find(name);
   return t == instance_.end() ? NULL : (*t).second;
 }
 
 void ManagerImpl::instanceDel(const string& name) {
-	/*
+	
 	if(instance_.find(name) == instance_.end()){
 		cerr << "Error: No instance named " << name << endl; 
   	return;
 	}
-	instance_.erase(name);
+	instance_.erase(name); //should call destructor if loc or segment?
 	if(statsName_ == name) statsName_ = "";
 	else if(connName_ == name) connName_ = "";
 	else if(fleetName_ == name) fleetName_ = "";
-	*/
+	
 }
 
 /* LocationRep Impl */
 
 string LocationRep::attribute(const string& name) {
-	//int i = segmentNumber(name);
-	
-	return "";
+	unsigned int index = segmentNumber(name);
+	//index into vector starts at 0, client will start at 1
+	Segment::Ptr seg = loc_->segmentAtIndex(index - 1);
+	if((Segment::Ptr)NULL == seg){
+		cerr << "Error: Invalid segment number " << index << endl;
+		return "";
+	}
+	return  ""; //seg->name();
 }
 
 
@@ -375,7 +391,7 @@ void LocationRep::attributeIs(const string& name, const string& v) {
 static const string segmentStr = "segment";
 static const int segmentStrlen = segmentStr.length();
 
-int LocationRep::segmentNumber(const string& name) {
+unsigned int LocationRep::segmentNumber(const string& name) {
 	if (name.substr(0, segmentStrlen) == segmentStr) {
       const char* t = name.c_str() + segmentStrlen;
       return atoi(t);
@@ -386,8 +402,26 @@ int LocationRep::segmentNumber(const string& name) {
 /* SegmentRep Impl */
 
 string SegmentRep::attribute(const string& name){
-
-	return "";
+	string response;
+	if("source" == name){
+		//response = seg_->name()
+	}
+	else if("length" == name){
+	
+	}
+	else if("return segment" == name){
+	
+	}
+	else if("difficulty" == name){
+	
+	}
+	else if("expedite support" == name){
+	
+	}
+	else{
+		cerr << "Error: Invalid attribute => " << name << endl;
+	}
+	return response;
 }
 
 
