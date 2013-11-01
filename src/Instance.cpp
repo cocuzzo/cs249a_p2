@@ -2,8 +2,10 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <algorithm>
 #include "Instance.h"
 #include "Engine.h"
+#include "Types.h"
 
 namespace Shipping {
 
@@ -225,6 +227,8 @@ public:
 private:
 	Ptr<ManagerImpl> manager_;
 	
+	void tokenizeLine(vector<string>& tokens, const string& str);
+	void parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& time, string& exp);
 };
 class FleetRep : public Instance {
 public:
@@ -240,6 +244,9 @@ public:
 	
 private:
 	Ptr<ManagerImpl> manager_;
+	
+	string getTypeStr(const string& name);
+	string getAttrStr(const string& name);
 	
 };
 
@@ -471,37 +478,163 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 /* StatsRep Impl */
 
 string StatsRep::attribute(const string& name){
-
-	return "";
+	ostringstream s;
+	
+	if("Customer" == name) s << stats_->customers();
+	else if("Port" == name) s << stats_->ports();
+	else if("Truck terminal" == name) s << stats_->truckTerminals();
+	else if("Boat terminal" == name) s << stats_->boatTerminals();
+	else if("Plane terminal" == name) s << stats_->planeTerminals();
+	else if("Truck segment" == name) s << stats_->truckSegments();
+	else if("Boat segment" == name) s << stats_->boatSegments();
+	else if("Plane segment" == name) s << stats_->planeSegments();
+	else if("expedite percentage" == name) s << stats_->expeditePercentage();
+	else {
+		cerr << "Error: Invalid attribute => " << name << endl;
+	}
+	return s.str();
 }
 
 void StatsRep::attributeIs(const string& name, const string& v){
-
-
+// Nothing to do, no writable attributes
 }
 
 /* FleetRep Impl */
 
 string FleetRep::attribute(const string& name){
-
-	return "";
+	string response;
+	string type = getTypeStr(name);
+	string attr = getAttrStr(name);
+	Engine::Ptr eng = manager_->engine();
+	/*
+	if("Truck" == type && "cost" == attr) response = eng->truckFleet()->cost().toString();
+	else if("Truck" == type && "capacity" == attr) response = eng->truckFleet()->capacity().toString();
+	else if("Truck" == type && "speed" == attr) response = eng->truckFleet()->speed().toString();
+	else if("Boat" == type && "cost" == attr) response = eng->boatFleet()->cost().toString();
+	else if("Boat" == type && "capacity" == attr) response = eng->boatFleet()->capacity().toString();
+	else if("Boat" == type && "speed" == attr) response = eng->boatFleet()->speed().toString();
+	else if("Plane" == type && "cost" == attr) response = eng->planeFleet()->cost().toString();
+	else if("Plane" == type && "capacity" == attr) response = eng->planeFleet()->capacity().toString();
+	else if("Plane" == type && "speed" == attr) response = eng->planeFleet()->speed().toString();
+	*/
+	return response;
 }
 
 void FleetRep::attributeIs(const string& name, const string& v){
+	string type = getTypeStr(name);
+	string attr = getAttrStr(name);
+	Engine::Ptr eng = manager_->engine();
+	/*
+	if("Truck" == type && "cost" == attr){
+		eng->truckFleet()->costIs(???);
+	}
+	else if("Truck" == type && "capacity" == attr){
+		eng->truckFleet()->capacityIs(???);
+	}
+	else if("Truck" == type && "speed" == attr){
+		eng->truckFleet()->speedIs(???);
+	}
+	else if("Boat" == type && "cost" == attr){
+		eng->boatFleet()->cost()
+	}
+	else if("Boat" == type && "capacity" == attr){
+		eng->boatFleet()->capacityIs(???);
+	}
+	else if("Boat" == type && "speed" == attr){
+		eng->boatFleet()->speedIs(???);
+	}
+	else if("Plane" == type && "cost" == attr){
+		eng->planeFleet()->cost(???);
+	}
+	else if("Plane" == type && "capacity" == attr)
+		eng->planeFleet()->capacityIs(???);
+	}
+	else if("Plane" == type && "speed" == attr){
+		eng->planeFleet()->speedIs(???);
+	}
+	*/
+}
 
-	
+string FleetRep::getTypeStr(const string& name){
+	size_t comma = name.find(',');
+	return name.substr(0, comma);
+}
+string FleetRep::getAttrStr(const string& name){
+	size_t comma = name.find(',');
+	//offset is 2 because comma and space before the attr
+	return name.substr(comma + 2); 
 }
 
 /* ConnRep Impl */
+static const string exploreStr = "explore";
+static const int exploreStrlen = exploreStr.length();
+static const string connectStr = "connect";
+static const int connectStrlen = connectStr.length();
+
+static inline bool delimFn(const char& c){ return 0 != isspace(c); }
+
+void ConnRep::tokenizeLine(vector<string>& tokens, const string& str){
+  auto end = str.end();
+  auto start = str.begin();
+  while(start != end){
+    start = find_if_not(start,end, delimFn);
+    if(start == end) break;
+    auto foundNext = find_if(start,end, delimFn);
+    tokens.push_back(string(start,foundNext));
+    start = foundNext;
+  }
+  return;
+}
 
 string ConnRep::attribute(const string& name){
+	Engine::Ptr eng = manager_->engine();
+	string response;
+	string param;
+	if(name.substr(0, exploreStrlen) == exploreStr){
+		//cout << conn->attribute("explore customer1 : distance 1500") << endl
+		param = name.substr(exploreStrlen + 1);
+		int colon = param.find(':');
+		string locStr = param.substr(0, colon - 1);
+		string attr = param.substr(colon + 2);
+		vector<string> tokens;
+		tokenizeLine(tokens, attr);
+		
+		Mile maxDist; Cost maxCost; Time maxTime; string exp = "no";
+		parseAttr(tokens, maxDist, maxCost, maxTime, exp);
+		Location::Ptr loc = eng->location(locStr);
+		Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
+		//vector<Path::Ptr> paths = eng->constrainedGraph(loc, maxDist, maxCost, maxTime, expedited);
+		//stringify paths
+	}
+	else if(name.substr(0, connectStrlen) == connectStr){
+		//cout << conn->attribute("connect customer2 : customer1") << endl;
+		param = name.substr(exploreStrlen + 1);
+		int colon = param.find(':');
+		string startStr = param.substr(0, colon - 1);
+		string endStr = param.substr(colon + 2);
+		Location::Ptr start = eng->location(startStr);
+		Location::Ptr end = eng->location(endStr);
+		//vector<Path::Ptr> paths = eng->connections(start, end);
+		//stringify paths
+	}
+	else{
+	
+	}
+	return response;
+}
 
-	return "";
+//Parameters are passed by reference so they can stay in scope and get updated
+void ConnRep::parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& time, string& exp){
+	//check for even number of tokens - attr, value pairs
+	if(0 != tokens.size() % 2) return;
+	for(int i = 0; i < tokens.size(); i += 2){
+		
+	
+	}
 }
 
 void ConnRep::attributeIs(const string& name, const string& v){
-
-
+// Nothing to do here, no writeable attributes
 }
 
 
