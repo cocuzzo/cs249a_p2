@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <list>
 
 #include "Types.h"
@@ -17,7 +18,7 @@ namespace Shipping {
 // ordinal types
 class Mile : public Ordinal<Mile, unsigned int> {
 public:
-	Mile(unsigned int num = 0) : Ordinal<Mile, unsigned int>(num){}
+	Mile(int num = 0) : Ordinal<Mile, unsigned int>(num){}
 };
 
 class Difficulty : public Ordinal<Difficulty, float> {
@@ -243,7 +244,8 @@ public:
 
 	inline Location::Ptr source() const { return source_; }
 	virtual void sourceIs(Location::Ptr _loc);
-	inline Mile distance() const { return distance_; }
+	inline Mile length() const { return length_; }
+	void lengthIs(Mile _length) { length_ = _length; } 
 	inline Segment::Ptr returnSegment() const { return returnSegment_; }
 	virtual void returnSegmentIs(Segment::Ptr _returnSegment);
 	inline Difficulty difficulty() const { return diff_; }
@@ -300,7 +302,7 @@ protected:
 	SegmentType segType_;
 	std::string name_;
 	Location::Ptr source_;
-	Mile distance_;
+	Mile length_;
 	Segment::Ptr returnSegment_;
 	Difficulty diff_;
 	Expedite expedite_;
@@ -483,8 +485,12 @@ public:
 	}
 	~Engine();
 
-	Location::Ptr locationNew(std::string name, Location::LocationType _locationType);
-	Segment::Ptr segmentNew(std::string name, Segment::SegmentType _segmentType);
+	Location::Ptr locationNew(const std::string& name, Location::LocationType _locationType);
+	Segment::Ptr segmentNew(const std::string& name, Segment::SegmentType _segmentType);
+	
+	// quick look up capability for the client of the engine
+	Location::Ptr location(const std::string& name);
+	Segment::Ptr segment(const std::string& name);
 	
 	inline Fleet::Ptr boatFleet() const { return boatFleet_; }
 	inline Fleet::Ptr planeFleet() const { return planeFleet_; }
@@ -534,8 +540,8 @@ public:
 protected:
 	Engine() { }
 	
-	std::vector<LocationReactor::Ptr> locReactors;
-	std::vector<SegmentReactor::Ptr> segReactors;
+	std::map<std::string, LocationReactor::Ptr> locReactors;
+	std::map<std::string, SegmentReactor::Ptr> segReactors;
 	Fleet::Ptr boatFleet_;
 	Fleet::Ptr planeFleet_;
 	Fleet::Ptr truckFleet_;	

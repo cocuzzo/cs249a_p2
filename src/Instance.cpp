@@ -69,7 +69,7 @@ private:
   Ptr<ManagerImpl> manager_;
 	Location::Ptr loc_;
 	
-	unsigned int segmentNumber(const string& name);
+	int segmentNumber(const string& name);
 
 };
 
@@ -373,14 +373,14 @@ void ManagerImpl::instanceDel(const string& name) {
 /* LocationRep Impl */
 
 string LocationRep::attribute(const string& name) {
-	unsigned int index = segmentNumber(name);
+	int index = segmentNumber(name);
 	//index into vector starts at 0, client will start at 1
 	Segment::Ptr seg = loc_->segmentAtIndex(index - 1);
 	if((Segment::Ptr)NULL == seg){
 		cerr << "Error: Invalid segment number " << index << endl;
 		return "";
 	}
-	return  ""; //seg->name();
+	return seg->name();
 }
 
 
@@ -391,7 +391,7 @@ void LocationRep::attributeIs(const string& name, const string& v) {
 static const string segmentStr = "segment";
 static const int segmentStrlen = segmentStr.length();
 
-unsigned int LocationRep::segmentNumber(const string& name) {
+int LocationRep::segmentNumber(const string& name) {
 	if (name.substr(0, segmentStrlen) == segmentStr) {
       const char* t = name.c_str() + segmentStrlen;
       return atoi(t);
@@ -404,19 +404,26 @@ unsigned int LocationRep::segmentNumber(const string& name) {
 string SegmentRep::attribute(const string& name){
 	string response;
 	if("source" == name){
-		//response = seg_->name()
+		Location::Ptr source = seg_->source();
+		response = source->name();
 	}
 	else if("length" == name){
-	
+		Mile length = seg_->length();
+		//response = length.toString();
+		response = "PRINT MILES HERE";
 	}
 	else if("return segment" == name){
-	
+		Segment::Ptr returnSeg = seg_->returnSegment();
+		response = returnSeg->name();
 	}
 	else if("difficulty" == name){
-	
+		Difficulty diff = seg_->difficulty();
+		//response = diff.toString();
+		response = "PRINT DIFFICULTY HERE";
 	}
 	else if("expedite support" == name){
-	
+		Segment::Expedite exp = seg_->expedite();
+		response = (Segment::supported() == exp) ? "yes" : "no";
 	}
 	else{
 		cerr << "Error: Invalid attribute => " << name << endl;
@@ -426,8 +433,38 @@ string SegmentRep::attribute(const string& name){
 
 
 void SegmentRep::attributeIs(const string& name, const string& v){
-
-
+	if("source" == name){
+		Engine::Ptr eng = manager_->engine();
+		Location::Ptr source = eng->location(v);
+		seg_->sourceIs(source);
+	}
+	else if("length" == name){
+		Mile length( atoi(v.c_str()) );
+		seg_->lengthIs(length);
+	}
+	else if("return segment" == name){
+		Engine::Ptr eng = manager_->engine();
+		Segment::Ptr returnSeg = eng->segment(v);
+		seg_->returnSegmentIs(returnSeg);
+	}
+	else if("difficulty" == name){
+		Difficulty diff( atof(v.c_str()) );
+		seg_->difficultyIs(diff);
+	}
+	else if("expedite support" == name){
+		if("yes" == v){
+			seg_->expediteIs(Segment::supported());
+		}
+		else if("no" == v){
+			seg_->expediteIs(Segment::unsupported());
+		}
+		else{
+			cerr << "Error: Invalid expedite value " << v << endl;
+		}
+	}
+	else{
+		cerr << "Error: Invalid attribute => " << name << endl;
+	}
 
 }
 

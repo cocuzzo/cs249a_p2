@@ -155,13 +155,27 @@ Engine::~Engine(){
 }
 
 Location::Ptr
-Engine::locationNew(std::string name, Location::LocationType _locationType){
+Engine::locationNew(const std::string& name, Location::LocationType _locationType){
 
 	return NULL; //placeholder
 }
 Segment::Ptr
-Engine::segmentNew(std::string name, Segment::SegmentType _segmentType){
+Engine::segmentNew(const std::string& name, Segment::SegmentType _segmentType){
 
+	return NULL; //placeholder
+}
+
+Location::Ptr 
+Engine::location(const std::string& name){
+	//look up in map of location reactors and return its notifier location
+	
+	return NULL; //placeholder
+}
+
+Segment::Ptr 
+Engine::segment(const std::string& name){
+	//look up in map of segment reactors and return its notifier segment
+	
 	return NULL; //placeholder
 }
 
