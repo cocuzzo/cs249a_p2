@@ -46,12 +46,14 @@ public:
 	Time(unsigned int num = 0) : Ordinal<Time, unsigned int>(num){}
 };
 
-class Segment; //Location needs to know about Segments before decl
+class Segment; //Forward declaration for Location
 
 class Location : public Fwk::PtrInterface<Location> {
 public:
 	typedef Fwk::Ptr<Location const> PtrConst;
 	typedef Fwk::Ptr<Location> Ptr;
+	
+	inline std::string name() const { return name_; }
 	
 	enum LocationType {
 		undefinedLoc_ = 0,
@@ -70,8 +72,8 @@ public:
 	static inline LocationType planeTerminalLoc() { return planeTerminalLoc_; }
 	static inline LocationType truckTerminalLoc() { return truckTerminalLoc_; }
 	
-	static Location::Ptr LocationNew(LocationType _locType) {
-		Ptr m = new Location(_locType);
+	static Location::Ptr LocationNew(const std::string& _name, LocationType _locType) {
+		Ptr m = new Location(_name, _locType);
   	return m;
 	}
 
@@ -120,8 +122,9 @@ public:
 	};
 
 protected:
-	explicit Location(LocationType _locType);
+	explicit Location(const std::string& _name, LocationType _locType);
 	LocationType locType_;
+	std::string name_;
 	std::vector<Fwk::Ptr<Segment> > segments_;
 
 	NotifieeConst *notifiee_;
@@ -210,6 +213,8 @@ public:
 	typedef Fwk::Ptr<Segment const> PtrConst;
 	typedef Fwk::Ptr<Segment> Ptr;
 	
+	inline std::string name() const { return name_; }
+	
 	enum SegmentType {
 		undefinedSeg_ = 0,
 		boatSeg_ = 1,
@@ -230,8 +235,8 @@ public:
 	static inline Expedite unsupported() { return unsupported_; }
 	static inline Expedite supported() { return supported_; }
 	
-	static Segment::Ptr SegmentNew(SegmentType _segType) {
-		Ptr m = new Segment(_segType);
+	static Segment::Ptr SegmentNew(const std::string& _name, SegmentType _segType) {
+		Ptr m = new Segment(_name, _segType);
     return m;
 	}
 	
@@ -291,8 +296,9 @@ public:
 	};
 
 protected:
-	explicit Segment(SegmentType _segType);
+	explicit Segment(const std::string& _name, SegmentType _segType);
 	SegmentType segType_;
+	std::string name_;
 	Location::Ptr source_;
 	Mile distance_;
 	Segment::Ptr returnSegment_;

@@ -7,8 +7,9 @@ using namespace Shipping;
 /******************************************************************************
 ** Location Impl
 ******************************************************************************/
-Location::Location(LocationType _locType) {
+Location::Location(const string& _name, LocationType _locType) {
   locType_ = _locType;
+  name_ = _name;
 }
 
 void
@@ -55,8 +56,9 @@ Location::NotifieeConst::notifierIs(const Location::PtrConst& _notifier) {
 /******************************************************************************
 ** Segment Impl
 ******************************************************************************/
-Segment::Segment(SegmentType _segType){
+Segment::Segment(const string& _name, SegmentType _segType){
   segType_ = _segType;
+  name_ = _name;
 }
 
 void
