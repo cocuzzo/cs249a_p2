@@ -123,6 +123,16 @@ protected:
 	explicit Location(LocationType _locType);
 	LocationType locType_;
 	std::vector<Fwk::Ptr<Segment> > segments_;
+
+	NotifieeConst *notifiee_;
+  void newNotifiee( Location::NotifieeConst * n ) const {
+    Location* me = const_cast<Location*>(this);
+    me->notifiee_ = n;
+  }
+	void deleteNotifiee() const {
+    Location* me = const_cast<Location*>(this);
+    me->notifiee_ = NULL;
+  }
 };
 
 class Customer : public Location {
@@ -133,8 +143,7 @@ public:
 	static Customer::Ptr CustomerIs() {
 		Ptr m = new Customer();
     return m;
-	}
-	
+	}	
 	
 protected:
 	Customer();
@@ -289,6 +298,16 @@ protected:
 	Segment::Ptr returnSegment_;
 	Difficulty diff_;
 	Expedite expedite_;
+
+	NotifieeConst *notifiee_;
+  void newNotifiee( Segment::NotifieeConst * n ) const {
+    Segment* me = const_cast<Segment*>(this);
+    me->notifiee_ = n;
+  }
+	void deleteNotifiee() const {
+    Segment* me = const_cast<Segment*>(this);
+    me->notifiee_ = NULL;
+  }
 };
 
 
@@ -514,6 +533,16 @@ protected:
 	Fleet::Ptr boatFleet_;
 	Fleet::Ptr planeFleet_;
 	Fleet::Ptr truckFleet_;	
+
+	NotifieeConst *notifiee_;
+  void newNotifiee( Engine::NotifieeConst * n ) const {
+    Engine* me = const_cast<Engine*>(this);
+    me->notifiee_ = n;
+  }
+	void deleteNotifiee() const {
+    Engine* me = const_cast<Engine*>(this);
+    me->notifiee_ = NULL;
+  }
 };
 
 
@@ -542,7 +571,7 @@ public:
   void onSegmentExpedite( Segment::Ptr seg );
 
 protected:
-	Stats(Engine *eng) : Engine::Notifiee() {
+	Stats(Engine* eng) : Engine::Notifiee() {
 		notifierIs(eng);
 	}
 

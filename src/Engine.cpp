@@ -7,52 +7,99 @@ using namespace Shipping;
 /******************************************************************************
 ** Location Impl
 ******************************************************************************/
-Location::Location(LocationType _locType){
+Location::Location(LocationType _locType) {
+  locType_ = _locType;
+}
 
+void
+Location::segmentAdd(Fwk::Ptr<Segment> _segment){
+  // need to refactor for idempotency
+  segments_.push_back(_segment);
+}
+
+void
+Location::segmentRemove(Fwk::Ptr<Segment> _segment){
 
 }
 
-void Location::segmentAdd(Fwk::Ptr<Segment> _segment){
-
-
+Fwk::Ptr<Segment>
+Location::segmentAtIndex(unsigned int _index){
+  Fwk::Ptr<Segment> seg;
+  try {
+    seg = segments_.at(_index);
+  } catch (...) {
+    return NULL;
+  }
+	return seg;
 }
 
-void Location::segmentRemove(Fwk::Ptr<Segment> _segment){
+//----------| NotifieeConst Implementation |------------//
 
-
+Location::NotifieeConst::~NotifieeConst() {
+  if(notifier_) {
+    notifier_->deleteNotifiee();
+  }
 }
 
-Fwk::Ptr<Segment> Location::segmentAtIndex(unsigned int _index){
-
-	return NULL;
+void
+Location::NotifieeConst::notifierIs(const Location::PtrConst& _notifier) {
+  if(_notifier == notifier_) return;
+  notifier_ = _notifier;
+  if(_notifier) {
+    _notifier->newNotifiee(this);
+  }
 }
+
+//----------| Notifiee Implementation |------------//
 
 /******************************************************************************
 ** Segment Impl
 ******************************************************************************/
 Segment::Segment(SegmentType _segType){
+  segType_ = _segType;
+}
+
+void
+Segment::sourceIs(Location::Ptr _loc){
+
+}
+
+void
+Segment::returnSegmentIs(Segment::Ptr _returnSegment){
 
 
 }
 
-void Segment::sourceIs(Location::Ptr _loc){
+//----------| NotifieeConst Implementation |------------//
 
+Segment::NotifieeConst::~NotifieeConst() {
+  if(notifier_) {
+    notifier_->deleteNotifiee();
+  }
 }
 
-void Segment::returnSegmentIs(Segment::Ptr _returnSegment){
-
-
+void
+Segment::NotifieeConst::notifierIs(const Segment::PtrConst& _notifier) {
+  if(_notifier == notifier_) return;
+  notifier_ = _notifier;
+  if(_notifier) {
+    _notifier->newNotifiee(this);
+  }
 }
+
+//----------| Notifiee Implementation |------------//
 
 /******************************************************************************
 ** Conn Impl
 ******************************************************************************/
-vector<Path::Ptr> Conn::ConstrainedGraph(Location::Ptr loc, Mile distance, 
+vector<Path::Ptr>
+Conn::ConstrainedGraph(Location::Ptr loc, Mile distance, 
 														Cost cost, Time time, Segment::Expedite expedited) {
 	vector<Path::Ptr> path;
 	return path; 
 }
-vector<Path::Ptr> Conn::Connections(Location::Ptr start, Location::Ptr end){
+vector<Path::Ptr>
+Conn::Connections(Location::Ptr start, Location::Ptr end){
 	
 	vector<Path::Ptr> path;
 	return path; 
@@ -61,11 +108,13 @@ vector<Path::Ptr> Conn::Connections(Location::Ptr start, Location::Ptr end){
 /******************************************************************************
 ** LocationReactor Impl
 ******************************************************************************/
-void LocationReactor::onLocationNew(){
+void
+LocationReactor::onLocationNew(){
 
 
 }
-void LocationReactor::onLocationDel(){
+void
+LocationReactor::onLocationDel(){
 
 
 
@@ -75,19 +124,24 @@ void LocationReactor::onLocationDel(){
 /******************************************************************************
 ** SegmentReactor Impl
 ******************************************************************************/
-void SegmentReactor::onSegmentNew(){
+void
+SegmentReactor::onSegmentNew(){
 
 }
-void SegmentReactor::onSegmentDel(){
+void
+SegmentReactor::onSegmentDel(){
 
 }
-void SegmentReactor::onSegmentSource(){
+void
+SegmentReactor::onSegmentSource(){
 
 }
-void SegmentReactor::onSegmentReturn(){
+void
+SegmentReactor::onSegmentReturn(){
 
 }
-void SegmentReactor::onSegmentExpedite(){
+void
+SegmentReactor::onSegmentExpedite(){
 
 }
 
@@ -98,28 +152,51 @@ Engine::~Engine(){
 
 }
 
-Location::Ptr Engine::locationNew(std::string name, Location::LocationType _locationType){
+Location::Ptr
+Engine::locationNew(std::string name, Location::LocationType _locationType){
 
 	return NULL; //placeholder
 }
-Segment::Ptr Engine::segmentNew(std::string name, Segment::SegmentType _segmentType){
+Segment::Ptr
+Engine::segmentNew(std::string name, Segment::SegmentType _segmentType){
 
 	return NULL; //placeholder
 }
+
+//----------| NotifieeConst Implementation |------------//
+
+Engine::NotifieeConst::~NotifieeConst() {
+  if(notifier_) {
+    notifier_->deleteNotifiee();
+  }
+}
+
+void
+Engine::NotifieeConst::notifierIs(const Engine::PtrConst& _notifier) {
+  if(_notifier == notifier_) return;
+  notifier_ = _notifier;
+  if(_notifier) {
+    _notifier->newNotifiee(this);
+  }
+}
+
+
 
 /******************************************************************************
 ** Stats Impl
 ******************************************************************************/
-void Stats::onLocationNew( Location::Ptr loc ){
+void
+Stats::onLocationNew( Location::Ptr loc ){
 
 }
-void Stats::onSegmentNew( Segment::Ptr seg ){
+void
+Stats::onSegmentNew( Segment::Ptr seg ){
 
 }
-void Stats::onSegmentExpedite( Segment::Ptr seg ){
+void
+Stats::onSegmentExpedite( Segment::Ptr seg ){
 
 }
-
 
 
 
