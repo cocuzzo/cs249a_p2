@@ -2,6 +2,7 @@
 #define ENGINE_H
 
 #include <string>
+#include <sstream>
 #include <vector>
 #include <map>
 #include <list>
@@ -14,37 +15,91 @@
 
 namespace Shipping {
 
+#define MAX_BUF 64
 
 // ordinal types
-class Mile : public Ordinal<Mile, unsigned int> {
+class Mile : public Ordinal<Mile, int> {
 public:
-	Mile(int num = 0) : Ordinal<Mile, unsigned int>(num){}
+	Mile(int num = 0) : Ordinal<Mile, int>(num) {
+		if (num < 0) {
+			std::ostringstream err;
+			err << "Mile value error: " << num;
+			throw err.str();
+		}
+	}
+	std::string toString() { return std::to_string(value_); }
 };
 
-class Difficulty : public Ordinal<Difficulty, float> {
+class Difficulty : public Ordinal<Difficulty, double> {
 public:
-	Difficulty(float num = 1.0) : Ordinal<Difficulty, float>(num){}
+	Difficulty(double num = 1.0) : Ordinal<Difficulty, double>(num) {
+		if (num < 1.0 || num > 5.0) {
+			std::ostringstream err;
+			err << "Difficulty value error: " << num;
+			throw err.str();
+		}
+	}
+	std::string toString() { 
+		char buf[MAX_BUF];
+		std::sprintf(buf, "%.2f", value_);
+		return std::string(buf);
+	}
 };
 
-class Speed : public Ordinal<Speed, float> {
+class Speed : public Ordinal<Speed, double> {
 public:
-	Speed(float num = 0.0) : Ordinal<Speed, float>(num){}
+	Speed(double num = 0.0) : Ordinal<Speed, double>(num) {
+		if (num < 0) {
+			std::ostringstream err;
+			err << "Speed value error: " << num;
+			throw err.str();
+		}
+	}
+	std::string toString() { 
+		char buf[MAX_BUF];
+		std::sprintf(buf, "%.2f", value_);
+		return std::string(buf);
+	}
 };
 
-class Cost : public Ordinal<Cost, float> {
+class Cost : public Ordinal<Cost, double> {
 public:
-	Cost(float num = 0.0) : Ordinal<Cost, float>(num){}
+	Cost(double num = 0.0) : Ordinal<Cost, double>(num) {
+		if (num < 0) {
+			std::ostringstream err;
+			err << "Cost value error: " << num;
+			throw err.str();
+		}
+	}
+	std::string toString() { 
+		char buf[MAX_BUF];
+		std::sprintf(buf, "%.2f", value_);
+		return std::string(buf);
+	}
 };
 
-class Capacity : public Ordinal<Capacity, float> {
+class Capacity : public Ordinal<Capacity, int> {
 public:
-	Capacity(float num = 0.0) : Ordinal<Capacity, float>(num){}
-
+	Capacity(int num = 0.0) : Ordinal<Capacity, int>(num) {
+		if (num < 0) {
+			std::ostringstream err;
+			err << "Capacity value error: " << num;
+			throw err.str();
+		}
+	}
+	std::string toString() { return std::to_string(value_); }
 };
 
-class Time : public Ordinal<Time, unsigned int> {
+class Time : public Ordinal<Time, int> {
 public:
-	Time(unsigned int num = 0) : Ordinal<Time, unsigned int>(num){}
+	Time(int num = 0) : Ordinal<Time, int>(num) {
+		if (num < 0) {
+			std::ostringstream err;
+			err << "Time value error: " << num;
+			throw err.str();
+		}
+	}
+	std::string toString() { return std::to_string(value_); }
 };
 
 class Segment; //Forward declaration for Location
@@ -77,8 +132,7 @@ public:
 		Ptr m = new Location(_name, _locType);
   	return m;
 	}
-
-		
+	~Location();
 	virtual void segmentAdd(Fwk::Ptr<Segment> _segment);
 	virtual void segmentRemove(Fwk::Ptr<Segment> _segment);
 	inline U32 segments() const { return segments_.size(); }
@@ -94,8 +148,6 @@ public:
 		~NotifieeConst();
 		virtual void notifierIs(const Location::PtrConst& _notifier);
 		
-		virtual void onLocationNew( Location::Ptr loc ) {}
-		virtual void onLocationDel( Location::Ptr loc ) {}
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
 				return m;
@@ -103,7 +155,7 @@ public:
 		// Constructors ======================================
 		protected:
 		Location::PtrConst notifier_;
-		NotifieeConst();
+		NotifieeConst() {}
 	};
 	//PEO
 	class Notifiee : public virtual NotifieeConst /*, public virtual Fwk::PtrInterface<Notifiee> */ {
@@ -119,14 +171,14 @@ public:
 		}
 	// Constructors ========================================
 	protected:
-		Notifiee();
+		Notifiee() {}
 	};
 
 protected:
 	explicit Location(const std::string& _name, LocationType _locType);
 	LocationType locType_;
 	std::string name_;
-	std::vector<Fwk::Ptr<Segment> > segments_;
+	std::list<Fwk::Ptr<Segment>> segments_;
 
 	NotifieeConst *notifiee_;
   void newNotifiee( Location::NotifieeConst * n ) const {
@@ -229,8 +281,8 @@ public:
 	static inline SegmentType truckSeg() { return truckSeg_; }
 
 	enum Expedite {
-		unsupported_ = 0,
-		supported_ = 1
+		unsupported_ = 1,
+		supported_ = 2
 	};
 	
 	static inline Expedite unsupported() { return unsupported_; }
@@ -240,7 +292,7 @@ public:
 		Ptr m = new Segment(_name, _segType);
     return m;
 	}
-	
+	~Segment();
 
 	inline Location::Ptr source() const { return source_; }
 	virtual void sourceIs(Location::Ptr _loc);
@@ -251,8 +303,7 @@ public:
 	inline Difficulty difficulty() const { return diff_; }
 	void difficultyIs(Difficulty _diff) { diff_ = _diff; }
 	inline Expedite expedite() const { return expedite_; }
-	void expediteIs(Expedite _expedite) { expedite_ = _expedite; }
-
+	void expediteIs(Expedite _expedite);
 	
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
@@ -264,8 +315,6 @@ public:
 		~NotifieeConst();
 		virtual void notifierIs(const Segment::PtrConst& _notifier);
   
-		virtual void onSegmentNew() {}
-    virtual void onSegmentDel() {}
     virtual void onSegmentSource() {}
 		virtual void onSegmentReturn() {}
 		virtual void onSegmentExpedite() {}
@@ -277,7 +326,7 @@ public:
 		// Constructors ======================================
 	protected:
 		Segment::PtrConst notifier_;
-		NotifieeConst();
+		NotifieeConst() {}
 	};
 	
 	//PEO
@@ -294,7 +343,7 @@ public:
 		}
 		// Constructors ========================================
 	protected:
-		Notifiee();
+		Notifiee() {}
 	};
 
 protected:
@@ -372,7 +421,7 @@ public:
 		Ptr m = new Fleet();
     return m;	
 	}
-	
+
 	inline Capacity capacity() const { return capacity_; }
 	void capacityIs(Capacity _capacity) { capacity_ = _capacity; }
 	inline Cost cost() const { return cost_; }
@@ -381,13 +430,11 @@ public:
 	void speedIs(Speed _speed) { speed_ = _speed; }
 	
 protected:
-	Fleet(){ }
-	
+	Fleet() {}
 	Capacity capacity_;
 	Cost cost_;
 	Speed speed_;
 };
-
 
 
 class Path : public Fwk::PtrInterface<Path> {
@@ -418,58 +465,47 @@ protected:
 	std::vector<Segment::Ptr> segments_;
 };
 
-class Conn : public Fwk::PtrInterface<Conn> {
-public:
-	typedef Fwk::Ptr<Conn const> PtrConst;
-	typedef Fwk::Ptr<Conn> Ptr;
-	static Conn::Ptr ConnNew() {
-		Ptr m = new Conn();
-	  return m;	
-	}
-	std::vector<Path::Ptr> ConstrainedGraph(Location::Ptr loc, Mile distance, Cost cost, Time time, Segment::Expedite expedited);
-	std::vector<Path::Ptr> Connections(Location::Ptr start, Location::Ptr end);
-
-protected:
-	Conn() { }
-};
 
 class Engine;
 
 class LocationReactor : public Location::Notifiee {
 public:
-	void onLocationNew();
-	void onLocationDel(); 
 
 	static LocationReactor * LocationReactorIs(Location *loc, Engine* owner) {
 		LocationReactor *m = new LocationReactor(loc, owner);
 		return m;
 	}
+
 protected:
-	LocationReactor(Location *_loc, Engine* _owner) : Location::Notifiee() {
+	LocationReactor(Location *_loc, Engine* _owner) {
 		notifierIs(_loc);
 		owner_ = _owner;
 	}
+
 	Engine* owner_;
 };
 
 class SegmentReactor : public Segment::Notifiee {
 public:
-	void onSegmentNew();
-	void onSegmentDel();
-	void onSegmentSource();
-	void onSegmentReturn();
-	void onSegmentExpedite(); 
 
 	static SegmentReactor * SegmentReactorIs(Segment* seg, Engine* owner) {
 		SegmentReactor *m = new SegmentReactor(seg, owner);
 		return m;
 	}
+
+	void onSegmentSource();
+	void onSegmentReturn();
+	void onSegmentExpedite(); 
+
 protected:
-	SegmentReactor(Segment* _seg, Engine* _owner) : Segment::Notifiee() {
+	SegmentReactor(Segment* _seg, Engine* _owner) {
 		notifierIs(_seg);
 		owner_ = _owner;
 	}
+
 	Engine* owner_;
+	Location::Ptr prevSource_;
+	Segment::Ptr prevReturn_;
 };
 
 
@@ -478,23 +514,33 @@ public:
 	typedef Fwk::Ptr<Engine const> PtrConst;
 	typedef Fwk::Ptr<Engine> Ptr;
 
-	/* note: constructor must instantiate fleets & stats */
 	static Engine::Ptr EngineNew() {
 		Ptr m = new Engine();
     return m;	
 	}
 	~Engine();
 
-	Location::Ptr locationNew(const std::string& name, Location::LocationType _locationType);
-	Segment::Ptr segmentNew(const std::string& name, Segment::SegmentType _segmentType);
+	Location::Ptr locationNew(const std::string& name, Location::LocationType locationType);
+	Segment::Ptr segmentNew(const std::string& name, Segment::SegmentType segmentType);
+
+	void locationDel(Location::Ptr loc);
+	void segmentDel(Segment::Ptr seg);
 	
-	// quick look up capability for the client of the engine
+	// look up capability for the client of the engine
 	Location::Ptr location(const std::string& name);
 	Segment::Ptr segment(const std::string& name);
 	
 	inline Fleet::Ptr boatFleet() const { return boatFleet_; }
 	inline Fleet::Ptr planeFleet() const { return planeFleet_; }
 	inline Fleet::Ptr truckFleet() const { return truckFleet_; }
+
+	void handleSegmentSource( Segment::Ptr seg, Location::Ptr prevSource );
+	void handleSegmentReturn( Segment::Ptr seg, Segment::Ptr prevReturn );
+	void handleSegmentExpedite( Segment::Ptr seg );
+
+	// Graph query methods
+	std::vector<Path::Ptr> constrainedGraph(Location::Ptr loc, Mile distance, Cost cost, Time time, Segment::Expedite expedited);
+	std::vector<Path::Ptr> connections(Location::Ptr start, Location::Ptr end);
 	
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
@@ -511,13 +557,13 @@ public:
 		virtual void onSegmentDel( Segment::Ptr seg ) {}
 		virtual void onSegmentExpedite( Segment::Ptr seg ) {}
 		static NotifieeConst::Ptr NotifieeConstIs() {
-				Ptr m = new NotifieeConst();
-				return m;
+			Ptr m = new NotifieeConst();
+			return m;
 		}
 		// Constructors ======================================
 	protected:
 		Engine::PtrConst notifier_;
-		NotifieeConst();
+		NotifieeConst() {}
 	};
 	
 	//PEO
@@ -534,14 +580,14 @@ public:
 		}
 		// Constructors ========================================
 	protected:
-		Notifiee();
+		Notifiee() {}
 	};
 
 protected:
 	Engine() { }
 	
-	std::map<std::string, LocationReactor::Ptr> locReactors;
-	std::map<std::string, SegmentReactor::Ptr> segReactors;
+	std::map<std::string, LocationReactor::Ptr> locReactors_;
+	std::map<std::string, SegmentReactor::Ptr> segReactors_;
 	Fleet::Ptr boatFleet_;
 	Fleet::Ptr planeFleet_;
 	Fleet::Ptr truckFleet_;	
@@ -579,11 +625,13 @@ public:
 	inline float expeditePercentage() const { return ((float)expediteSegments_)/(boatSegments_ + planeSegments_ + truckSegments_); }
 	
 	void onLocationNew( Location::Ptr loc );
+	void onLocationDel( Location::Ptr loc );
 	void onSegmentNew( Segment::Ptr seg );
+	void onSegmentDel( Segment::Ptr seg);
   void onSegmentExpedite( Segment::Ptr seg );
 
 protected:
-	Stats(Engine* eng) : Engine::Notifiee() {
+	Stats(Engine* eng) {
 		notifierIs(eng);
 	}
 
@@ -598,8 +646,6 @@ protected:
 	U32 expediteSegments_;
 	float expeditePercentage_;
 };
-
-
 
 } /* end shipping namespace */
 
