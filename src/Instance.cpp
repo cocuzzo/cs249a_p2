@@ -265,95 +265,96 @@ ManagerImpl::ManagerImpl() {
 }
 
 Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
-	
-	if(instance_.find(name) != instance_.end() ||
-		 name == statsName_ || 
-		 name == fleetName_ ||
-		 name == connName_ )
-	{
-			
-		cerr << "Error: Already have instance named " << name << endl;
-	}
-	
-	if (type == "Customer") {
-  	Ptr<CustomerRep> t = new CustomerRep(name, this);
-    instance_[name] = t;
-    return t;
-  }
-	else if (type == "Port") {
-  	Ptr<PortRep> t = new PortRep(name, this);
-    instance_[name] = t;
-    return t;
-  }
-  else if (type == "Truck terminal") {
-  	Ptr<TruckTerminalRep> t = new TruckTerminalRep(name, this);
-    instance_[name] = t;
-    return t;
-  }
-  else if (type == "Boat terminal") {
-  	Ptr<BoatTerminalRep> t = new BoatTerminalRep(name, this);
-    instance_[name] = t;
-    return t;
-  }
-  else if (type == "Plane terminal") {
-  	Ptr<PlaneTerminalRep> t = new PlaneTerminalRep(name, this);
-    instance_[name] = t;
-    return t;
-  }
-  else if (type == "Truck segment") {
-  	Ptr<TruckTerminalRep> t = new TruckTerminalRep(name, this);
-    instance_[name] = t;
-    return t;
-  }
-  else if (type == "Boat segment") {
-  	Ptr<BoatTerminalRep> t = new BoatTerminalRep(name, this);
-    instance_[name] = t;
-    return t;
-  }
-  else if (type == "Plane segment") {
-  	Ptr<PlaneTerminalRep> t = new PlaneTerminalRep(name, this);
-    instance_[name] = t;
-    return t;
-  }
-  else if (type == "Stats") {
-  	if( "" == statsName_ ){
-  		instance_[name] = statsRep_;
-  		statsName_ = name;
-  	}
-  	else {
-  		cerr << "Error: Only 1 allowed stats instance, returning stats instance named " 
-  				 << statsName_ << endl;
-  	}
-    return statsRep_;
-  }
-  else if (type == "Conn") {
-  	if( "" == connName_ ){
-    	instance_[name] = connRep_;
-    	connName_ = name;
- 	 	}
- 	 	else {
- 	 		cerr << "Error: Only 1 allowed conn instance, returning conn instance named " 
-  				 << connName_ << endl;
-  	}
- 		return connRep_;
- 	}
-  else if (type == "Fleet") {
-    if( "" == fleetName_ ){
-    	instance_[name] = fleetRep_;
-    	fleetName_ = name;
- 	 	}
- 	 	else {
- 	 		cerr << "Error: Only 1 allowed fleet instance, returning fleet instance named " 
-  				 << fleetName_ << endl;
-  	}
- 		return fleetRep_;
-  }
-  else{
-  	cerr << "Error: Invalid instance type " << type << endl;
-  	return NULL;
-  }
+	Ptr<Instance> newInst;
+	try{
+		if(instance_.find(name) != instance_.end() ||
+			 name == statsName_ || 
+			 name == fleetName_ ||
+			 name == connName_  ||
+			 name == "")
+		{
+			throw string("Error: Already have instance named " + name);
+		}
+		
+		if (type == "Customer") {
+			Ptr<CustomerRep> t = new CustomerRep(name, this);
+			instance_[name] = t;
+			newInst = t;
+		}
+		else if (type == "Port") {
+			Ptr<PortRep> t = new PortRep(name, this);
+			instance_[name] = t;
+			newInst = t;
+		}
+		else if (type == "Truck terminal") {
+			Ptr<TruckTerminalRep> t = new TruckTerminalRep(name, this);
+			instance_[name] = t;
+			newInst = t;
+		}
+		else if (type == "Boat terminal") {
+			Ptr<BoatTerminalRep> t = new BoatTerminalRep(name, this);
+			instance_[name] = t;
+			newInst = t;
+		}
+		else if (type == "Plane terminal") {
+			Ptr<PlaneTerminalRep> t = new PlaneTerminalRep(name, this);
+			instance_[name] = t;
+			newInst = t;
+		}
+		else if (type == "Truck segment") {
+			Ptr<TruckTerminalRep> t = new TruckTerminalRep(name, this);
+			instance_[name] = t;
+			newInst = t;
+		}
+		else if (type == "Boat segment") {
+			Ptr<BoatTerminalRep> t = new BoatTerminalRep(name, this);
+			instance_[name] = t;
+			newInst = t;
+		}
+		else if (type == "Plane segment") {
+			Ptr<PlaneTerminalRep> t = new PlaneTerminalRep(name, this);
+			instance_[name] = t;
+			newInst = t;
+		}
+		else if (type == "Stats") {
+			newInst = statsRep_;
+			if( "" == statsName_ ){
+				instance_[name] = statsRep_;
+				statsName_ = name;
+			}
+			else {
+				throw string("Error: Only 1 allowed stats instance, returning stats instance named " + statsName_);
+			}
+		}
+		else if (type == "Conn") {
+			newInst = connRep_;
+			if( "" == connName_ ){
+				instance_[name] = connRep_;
+				connName_ = name;
+			}
+			else {
+				throw string("Error: Only 1 allowed conn instance, returning conn instance named " + connName_); 
+			}
+		}
+		else if (type == "Fleet") {
+			newInst = fleetRep_;
+			if( "" == fleetName_ ){
+				instance_[name] = fleetRep_;
+				fleetName_ = name;
+			}
+			else {
+				throw string("Error: Only 1 allowed fleet instance, returning fleet instance named " + fleetName_);
+			}
+		}
+		else{
+			throw string("Error: Invalid instance type " + type);
+		}
+  } //end try block
+  catch(string& msg){
+  	cerr << msg << endl;
+  }//end catch block
   
-  return NULL;
+  return newInst;
 }
 
 Ptr<Instance> ManagerImpl::instance(const string& name) {
@@ -365,29 +366,48 @@ Ptr<Instance> ManagerImpl::instance(const string& name) {
 }
 
 void ManagerImpl::instanceDel(const string& name) {
-	
-	if(instance_.find(name) == instance_.end()){
-		cerr << "Error: No instance named " << name << endl; 
-  	return;
-	}
-	instance_.erase(name); //should call destructor if loc or segment?
-	if(statsName_ == name) statsName_ = "";
-	else if(connName_ == name) connName_ = "";
-	else if(fleetName_ == name) fleetName_ = "";
-	
+	try{
+		if(instance_.find(name) == instance_.end()){
+			throw string("Error: No instance named " + name); 
+		}
+		instance_.erase(name); //should call destructor if loc or segment?
+		if(statsName_ == name) statsName_ = "";
+		else if(connName_ == name) connName_ = "";
+		else if(fleetName_ == name) {
+			fleetName_ = "";
+			Cost dCost; Capacity dCapacity; Speed dSpeed;
+			engine_->truckFleet()->costIs(dCost);
+			engine_->truckFleet()->capacityIs(dCapacity);
+			engine_->truckFleet()->speedIs(dSpeed);
+			engine_->boatFleet()->costIs(dCost);
+			engine_->boatFleet()->capacityIs(dCapacity);
+			engine_->boatFleet()->speedIs(dSpeed);
+			engine_->planeFleet()->costIs(dCost);
+			engine_->planeFleet()->capacityIs(dCapacity);
+			engine_->planeFleet()->speedIs(dSpeed);
+		}
+	}//end try block
+	catch(string& msg){
+		cerr << msg << endl;
+	}//end catch block
 }
 
 /* LocationRep Impl */
 
 string LocationRep::attribute(const string& name) {
-	int index = segmentNumber(name);
-	//index into vector starts at 0, client will start at 1
-	Segment::Ptr seg = loc_->segmentAtIndex(index - 1);
-	if((Segment::Ptr)NULL == seg){
-		cerr << "Error: Invalid segment number " << index << endl;
-		return "";
-	}
-	return seg->name();
+	string response;
+	try{	
+		int index = segmentNumber(name);
+		//index into vector starts at 0, client will start at 1
+		Segment::Ptr seg = loc_->segmentAtIndex(index - 1);
+		if((Segment::Ptr)NULL == seg){
+			throw string("Error: Invalid segment number " + index);
+		}
+		response = seg->name();
+	}//end try block
+	catch(string& msg){
+		cerr << msg << endl;
+	}//end catch block
 }
 
 
@@ -403,75 +423,86 @@ int LocationRep::segmentNumber(const string& name) {
       const char* t = name.c_str() + segmentStrlen;
       return atoi(t);
   }
-  return 0;
+  return -1;
 }
 
 /* SegmentRep Impl */
 
 string SegmentRep::attribute(const string& name){
 	string response;
-	if("source" == name){
-		Location::Ptr source = seg_->source();
-		response = source->name();
-	}
-	else if("length" == name){
-		Mile length = seg_->length();
-		//response = length.toString();
-		response = "PRINT MILES HERE";
-	}
-	else if("return segment" == name){
-		Segment::Ptr returnSeg = seg_->returnSegment();
-		response = returnSeg->name();
-	}
-	else if("difficulty" == name){
-		Difficulty diff = seg_->difficulty();
-		//response = diff.toString();
-		response = "PRINT DIFFICULTY HERE";
-	}
-	else if("expedite support" == name){
-		Segment::Expedite exp = seg_->expedite();
-		response = (Segment::supported() == exp) ? "yes" : "no";
-	}
-	else{
-		cerr << "Error: Invalid attribute => " << name << endl;
-	}
+	try{
+		if("source" == name){
+			Location::Ptr source = seg_->source();
+			response = source->name();
+		}
+		else if("length" == name){
+			Mile length = seg_->length();
+			//response = length.toString();
+			response = "PRINT MILES HERE";
+		}
+		else if("return segment" == name){
+			Segment::Ptr returnSeg = seg_->returnSegment();
+			response = returnSeg->name();
+		}
+		else if("difficulty" == name){
+			Difficulty diff = seg_->difficulty();
+			//response = diff.toString();
+			response = "PRINT DIFFICULTY HERE";
+		}
+		else if("expedite support" == name){
+			Segment::Expedite exp = seg_->expedite();
+			response = (Segment::supported() == exp) ? "yes" : "no";
+		}
+		else{
+			throw string("Error: Invalid attribute => " + name);
+		}
+	}//end try block
+	catch(string& msg){
+		cerr << msg << endl;
+	}//end catch block
+	
 	return response;
 }
 
 
 void SegmentRep::attributeIs(const string& name, const string& v){
-	if("source" == name){
-		Engine::Ptr eng = manager_->engine();
-		Location::Ptr source = eng->location(v);
-		seg_->sourceIs(source);
-	}
-	else if("length" == name){
-		Mile length( atoi(v.c_str()) );
-		seg_->lengthIs(length);
-	}
-	else if("return segment" == name){
-		Engine::Ptr eng = manager_->engine();
-		Segment::Ptr returnSeg = eng->segment(v);
-		seg_->returnSegmentIs(returnSeg);
-	}
-	else if("difficulty" == name){
-		Difficulty diff( atof(v.c_str()) );
-		seg_->difficultyIs(diff);
-	}
-	else if("expedite support" == name){
-		if("yes" == v){
-			seg_->expediteIs(Segment::supported());
+	try{	
+		if("source" == name){
+			Engine::Ptr eng = manager_->engine();
+			Location::Ptr source = eng->location(v);
+			seg_->sourceIs(source);
 		}
-		else if("no" == v){
-			seg_->expediteIs(Segment::unsupported());
+		else if("length" == name){
+			Mile length( atoi(v.c_str()) );
+			seg_->lengthIs(length);
+		}
+		else if("return segment" == name){
+			Engine::Ptr eng = manager_->engine();
+			Segment::Ptr returnSeg = eng->segment(v);
+			seg_->returnSegmentIs(returnSeg);
+		}
+		else if("difficulty" == name){
+			Difficulty diff( atof(v.c_str()) );
+			seg_->difficultyIs(diff);
+		}
+		else if("expedite support" == name){
+			if("yes" == v){
+				seg_->expediteIs(Segment::supported());
+			}
+			else if("no" == v){
+				seg_->expediteIs(Segment::unsupported());
+			}
+			else{
+				throw string("Error: Invalid expedite value " + v);
+			}
 		}
 		else{
-			cerr << "Error: Invalid expedite value " << v << endl;
+			throw string("Error: Invalid attribute => " + name);
 		}
-	}
-	else{
-		cerr << "Error: Invalid attribute => " << name << endl;
-	}
+	}//end try block
+	catch(string& msg){
+		cerr << msg << endl;
+	}//end catch block
 
 }
 
@@ -479,19 +510,23 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 
 string StatsRep::attribute(const string& name){
 	ostringstream s;
-	
-	if("Customer" == name) s << stats_->customers();
-	else if("Port" == name) s << stats_->ports();
-	else if("Truck terminal" == name) s << stats_->truckTerminals();
-	else if("Boat terminal" == name) s << stats_->boatTerminals();
-	else if("Plane terminal" == name) s << stats_->planeTerminals();
-	else if("Truck segment" == name) s << stats_->truckSegments();
-	else if("Boat segment" == name) s << stats_->boatSegments();
-	else if("Plane segment" == name) s << stats_->planeSegments();
-	else if("expedite percentage" == name) s << stats_->expeditePercentage();
-	else {
-		cerr << "Error: Invalid attribute => " << name << endl;
-	}
+	try{
+		if("Customer" == name) s << stats_->customers();
+		else if("Port" == name) s << stats_->ports();
+		else if("Truck terminal" == name) s << stats_->truckTerminals();
+		else if("Boat terminal" == name) s << stats_->boatTerminals();
+		else if("Plane terminal" == name) s << stats_->planeTerminals();
+		else if("Truck segment" == name) s << stats_->truckSegments();
+		else if("Boat segment" == name) s << stats_->boatSegments();
+		else if("Plane segment" == name) s << stats_->planeSegments();
+		else if("expedite percentage" == name) s << stats_->expeditePercentage(); //precision?
+		else {
+			throw string("Error: Invalid attribute => " + name);
+		}
+	}//end try block
+	catch(string& msg){
+		cerr << msg << endl;
+	}//end catch block
 	return s.str();
 }
 
@@ -503,56 +538,66 @@ void StatsRep::attributeIs(const string& name, const string& v){
 
 string FleetRep::attribute(const string& name){
 	string response;
-	string type = getTypeStr(name);
-	string attr = getAttrStr(name);
-	Engine::Ptr eng = manager_->engine();
-	/*
-	if("Truck" == type && "cost" == attr) response = eng->truckFleet()->cost().toString();
-	else if("Truck" == type && "capacity" == attr) response = eng->truckFleet()->capacity().toString();
-	else if("Truck" == type && "speed" == attr) response = eng->truckFleet()->speed().toString();
-	else if("Boat" == type && "cost" == attr) response = eng->boatFleet()->cost().toString();
-	else if("Boat" == type && "capacity" == attr) response = eng->boatFleet()->capacity().toString();
-	else if("Boat" == type && "speed" == attr) response = eng->boatFleet()->speed().toString();
-	else if("Plane" == type && "cost" == attr) response = eng->planeFleet()->cost().toString();
-	else if("Plane" == type && "capacity" == attr) response = eng->planeFleet()->capacity().toString();
-	else if("Plane" == type && "speed" == attr) response = eng->planeFleet()->speed().toString();
-	*/
+	try{
+		string type = getTypeStr(name);
+		string attr = getAttrStr(name);
+		Engine::Ptr eng = manager_->engine();
+		/*
+		if("Truck" == type && "cost" == attr) response = eng->truckFleet()->cost().toString();
+		else if("Truck" == type && "capacity" == attr) response = eng->truckFleet()->capacity().toString();
+		else if("Truck" == type && "speed" == attr) response = eng->truckFleet()->speed().toString();
+		else if("Boat" == type && "cost" == attr) response = eng->boatFleet()->cost().toString();
+		else if("Boat" == type && "capacity" == attr) response = eng->boatFleet()->capacity().toString();
+		else if("Boat" == type && "speed" == attr) response = eng->boatFleet()->speed().toString();
+		else if("Plane" == type && "cost" == attr) response = eng->planeFleet()->cost().toString();
+		else if("Plane" == type && "capacity" == attr) response = eng->planeFleet()->capacity().toString();
+		else if("Plane" == type && "speed" == attr) response = eng->planeFleet()->speed().toString();
+		*/
+	}//end try block
+	catch(string msg){
+		cerr << msg << endl;
+	}//end catch block
 	return response;
 }
 
 void FleetRep::attributeIs(const string& name, const string& v){
-	string type = getTypeStr(name);
-	string attr = getAttrStr(name);
-	Engine::Ptr eng = manager_->engine();
-	/*
-	if("Truck" == type && "cost" == attr){
-		eng->truckFleet()->costIs(???);
+	try{
+		string type = getTypeStr(name);
+		string attr = getAttrStr(name);
+		Engine::Ptr eng = manager_->engine();
+		/*
+		if("Truck" == type && "cost" == attr){
+			eng->truckFleet()->costIs(???);
+		}
+		else if("Truck" == type && "capacity" == attr){
+			eng->truckFleet()->capacityIs(???);
+		}
+		else if("Truck" == type && "speed" == attr){
+			eng->truckFleet()->speedIs(???);
+		}
+		else if("Boat" == type && "cost" == attr){
+			eng->boatFleet()->cost()
+		}
+		else if("Boat" == type && "capacity" == attr){
+			eng->boatFleet()->capacityIs(???);
+		}
+		else if("Boat" == type && "speed" == attr){
+			eng->boatFleet()->speedIs(???);
+		}
+		else if("Plane" == type && "cost" == attr){
+			eng->planeFleet()->cost(???);
+		}
+		else if("Plane" == type && "capacity" == attr)
+			eng->planeFleet()->capacityIs(???);
+		}
+		else if("Plane" == type && "speed" == attr){
+			eng->planeFleet()->speedIs(???);
+		}
+		*/
 	}
-	else if("Truck" == type && "capacity" == attr){
-		eng->truckFleet()->capacityIs(???);
-	}
-	else if("Truck" == type && "speed" == attr){
-		eng->truckFleet()->speedIs(???);
-	}
-	else if("Boat" == type && "cost" == attr){
-		eng->boatFleet()->cost()
-	}
-	else if("Boat" == type && "capacity" == attr){
-		eng->boatFleet()->capacityIs(???);
-	}
-	else if("Boat" == type && "speed" == attr){
-		eng->boatFleet()->speedIs(???);
-	}
-	else if("Plane" == type && "cost" == attr){
-		eng->planeFleet()->cost(???);
-	}
-	else if("Plane" == type && "capacity" == attr)
-		eng->planeFleet()->capacityIs(???);
-	}
-	else if("Plane" == type && "speed" == attr){
-		eng->planeFleet()->speedIs(???);
-	}
-	*/
+	catch(string msg){
+		cerr << msg << endl;
+	}//end catch block
 }
 
 string FleetRep::getTypeStr(const string& name){
@@ -587,50 +632,82 @@ void ConnRep::tokenizeLine(vector<string>& tokens, const string& str){
 }
 
 string ConnRep::attribute(const string& name){
-	Engine::Ptr eng = manager_->engine();
 	string response;
-	string param;
-	if(name.substr(0, exploreStrlen) == exploreStr){
-		//cout << conn->attribute("explore customer1 : distance 1500") << endl
-		param = name.substr(exploreStrlen + 1);
-		int colon = param.find(':');
-		string locStr = param.substr(0, colon - 1);
-		string attr = param.substr(colon + 2);
-		vector<string> tokens;
-		tokenizeLine(tokens, attr);
-		
-		Mile maxDist; Cost maxCost; Time maxTime; string exp = "no";
-		parseAttr(tokens, maxDist, maxCost, maxTime, exp);
-		Location::Ptr loc = eng->location(locStr);
-		Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
-		//vector<Path::Ptr> paths = eng->constrainedGraph(loc, maxDist, maxCost, maxTime, expedited);
-		//stringify paths
-	}
-	else if(name.substr(0, connectStrlen) == connectStr){
-		//cout << conn->attribute("connect customer2 : customer1") << endl;
-		param = name.substr(exploreStrlen + 1);
-		int colon = param.find(':');
-		string startStr = param.substr(0, colon - 1);
-		string endStr = param.substr(colon + 2);
-		Location::Ptr start = eng->location(startStr);
-		Location::Ptr end = eng->location(endStr);
-		//vector<Path::Ptr> paths = eng->connections(start, end);
-		//stringify paths
-	}
-	else{
+	try{
+		Engine::Ptr eng = manager_->engine();
+		string param;
+		if(name.substr(0, exploreStrlen) == exploreStr){
+			//cout << conn->attribute("explore customer1 : distance 1500") << endl
+			param = name.substr(exploreStrlen + 1);
+			int colon = param.find(':');
+			string locStr = param.substr(0, colon - 1);
+			string attr = param.substr(colon + 2);
+			vector<string> tokens;
+			tokenizeLine(tokens, attr);
+			
+			Location::Ptr loc = eng->location(locStr);
+			Mile maxDist; Cost maxCost; Time maxTime; string exp = "no";
+			parseAttr(tokens, maxDist, maxCost, maxTime, exp);
+			Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
+			//vector<Path::Ptr> paths = eng->constrainedGraph(loc, maxDist, maxCost, maxTime, expedited);
+			//stringify paths
+			//response = 
+		}
+		else if(name.substr(0, connectStrlen) == connectStr){
+			//cout << conn->attribute("connect customer2 : customer1") << endl;
+			param = name.substr(exploreStrlen + 1);
+			int colon = param.find(':');
+			string startStr = param.substr(0, colon - 1);
+			string endStr = param.substr(colon + 2);
+			Location::Ptr start = eng->location(startStr);
+			Location::Ptr end = eng->location(endStr);
+			//vector<Path::Ptr> paths = eng->connections(start, end);
+			//stringify paths
+			//response = 
+		}
+		else{
+			throw string("Error: Invalid attribute => " + name);
+		}
+	}//end try block
+	catch(string msg){
+		cerr << msg << endl;
+	}//end catch block
 	
-	}
 	return response;
 }
 
 //Parameters are passed by reference so they can stay in scope and get updated
 void ConnRep::parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& time, string& exp){
 	//check for even number of tokens - attr, value pairs
-	if(0 != tokens.size() % 2) return;
-	for(int i = 0; i < tokens.size(); i += 2){
-		
-	
-	}
+	int i = 0;
+	int numTokens = tokens.size();
+	while( i < numTokens ){
+		if("distance" == tokens[i]){
+			++i;
+			if(i >= numTokens) throw string("Error: No value field");
+			dist = Mile( atoi(tokens[i].c_str()) );
+			++i;
+		}
+		else if("cost" == tokens[i]){
+			++i;
+			if(i >= numTokens) throw string("Error: No value field");
+			cost = Cost(atof( tokens[i].c_str()) );
+			++i;
+		}
+		else if("time" == tokens[i]){
+			++i;
+			if(i >= numTokens) throw string("Error: No value field");
+			time = Time( atoi( tokens[i].c_str()) );
+			++i;
+		}
+		else if("expedited" == tokens[i]){
+			exp = "yes";
+			++i;
+		}
+		else{
+			throw string("Error: Invalid attribute => " + tokens[i]);
+		} 
+	}//end while
 }
 
 void ConnRep::attributeIs(const string& name, const string& v){
@@ -650,3 +727,6 @@ void ConnRep::attributeIs(const string& name, const string& v){
 Ptr<Instance::Manager> shippingInstanceManager() {
   return new Shipping::ManagerImpl();
 }
+
+
+
