@@ -224,7 +224,14 @@ Engine::segmentNew(const std::string& name, Segment::SegmentType segmentType){
 
 void
 Engine::locationDel(Location::Ptr loc) {
+  // iterate through segments in a location, clear the source
+  for (U32 i = 0; i < loc->segments(); i++) {
+    Segment::Ptr seg = loc->segmentAtIndex(i);
+    seg->sourceIs(NULL);
+  }
+  // remove the reactor from Engine's internal map
   if (locReactors_.erase(loc->name()) != 1) return;
+  // send out notification
   if(notifiee_) {
     notifiee_->onLocationDel(loc);
   }
@@ -232,7 +239,12 @@ Engine::locationDel(Location::Ptr loc) {
 
 void
 Engine::segmentDel(Segment::Ptr seg) {
+  // remove segment from segment source's segment list
+  Location::Ptr loc = seg->source();
+  if (loc) loc->segmentRemove(seg);
+  // remove the reactor from Engine's internal map
   if (segReactors_.erase(seg->name()) != 1) return;
+  // send out notification
   if (notifiee_) {
     notifiee_->onSegmentDel(seg);
   }
