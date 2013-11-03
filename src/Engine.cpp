@@ -81,7 +81,10 @@ Segment::~Segment() {
 
 void
 Segment::sourceIs(Location::Ptr _source){
-  if (source_->name() == _source->name()) return;
+  if (!_source && !source_) return;
+  if (_source) {
+    if (source_->name() == _source->name()) return;
+  }
   source_ = _source;
   if(notifiee_) try {
     notifiee_->onSegmentSource();
@@ -271,7 +274,7 @@ Engine::handleSegmentSource( Segment::Ptr seg, Location::Ptr prevSource ) {
   if (prevSource) prevSource->segmentRemove(seg);
   // add the segment to the source's segment list
   Location::Ptr source = seg->source();
-  source->segmentAdd(seg);
+  if (source) source->segmentAdd(seg);
 }
 
 void
