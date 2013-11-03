@@ -81,10 +81,7 @@ Segment::~Segment() {
 
 void
 Segment::sourceIs(Location::Ptr _source){
-  if (!_source && !source_) return;
-  if (_source) {
-    if (source_->name() == _source->name()) return;
-  }
+  if (source_ == _source) return;
   source_ = _source;
   if(notifiee_) try {
     notifiee_->onSegmentSource();
@@ -93,7 +90,7 @@ Segment::sourceIs(Location::Ptr _source){
 
 void
 Segment::returnSegmentIs(Segment::Ptr _returnSegment){
-  if (returnSegment_->name() == _returnSegment->name()) return;
+	if (returnSegment_ == _returnSegment) return;
   returnSegment_ = _returnSegment;
   if(notifiee_) try {
     notifiee_->onSegmentReturn();
@@ -289,8 +286,7 @@ Engine::handleSegmentReturn( Segment::Ptr seg, Segment::Ptr prevReturn ) {
   if (prevReturn) prevReturn->returnSegmentIs(NULL);
   // add the segment to the return segments returnSegment field
   Segment::Ptr retSeg = seg->returnSegment();
-  if (retSeg->returnSegment()->name() == seg->name()) return;
-  retSeg->returnSegmentIs(seg);
+  if (retSeg) retSeg->returnSegmentIs(seg); 
 }
 
 void
@@ -406,4 +402,13 @@ Stats::onSegmentExpedite( Segment::Ptr seg ){
     (seg->expedite() == Segment::supported()) ? expediteSegments_++ : expediteSegments_--;
   }
 }
+
+double Stats::expeditePercentage() const {
+	double perc = ((double)expediteSegments_)/(boatSegments_ + planeSegments_ + truckSegments_) * 100; 
+	return perc;
+} 
+
+
+
+
 

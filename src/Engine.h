@@ -46,21 +46,25 @@ public:
 	}
 };
 
-class Speed : public Ordinal<Speed, int> {
+class Speed : public Ordinal<Speed, double> {
 public:
-	Speed(int num = 0) : Ordinal<Speed, int>(num) {
+	Speed(double num = 0.0) : Ordinal<Speed, double>(num) {
 		if (num < 0) {
 			std::ostringstream err;
 			err << "Speed value error: " << num;
 			throw err.str();
 		}
 	}
-	std::string toString() { return std::to_string(value_); }
+	std::string toString() { 
+		char buf[MAX_BUF];
+		std::sprintf(buf, "%.2f", value_);
+		return std::string(buf);
+	}
 };
 
 class Cost : public Ordinal<Cost, double> {
 public:
-	Cost(double num = 0.0) : Ordinal<Cost, double>(num) {
+	Cost(int num = 0.0) : Ordinal<Cost, double>(num) {
 		if (num < 0) {
 			std::ostringstream err;
 			err << "Cost value error: " << num;
@@ -618,7 +622,7 @@ public:
 	inline U32 planeSegments() const { return planeSegments_; }
 	inline U32 truckSegments() const { return truckSegments_; }
 	inline U32 expediteSegments() const { return expediteSegments_; }
-	inline double expeditePercentage() const { return ((double)expediteSegments_)/(boatSegments_ + planeSegments_ + truckSegments_); }
+	double expeditePercentage() const;
 	
 	void onLocationNew( Location::Ptr loc );
 	void onLocationDel( Location::Ptr loc );

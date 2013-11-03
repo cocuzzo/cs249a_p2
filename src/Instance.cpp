@@ -306,17 +306,17 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 			newInst = t;
 		}
 		else if (type == "Truck segment") {
-			Ptr<TruckTerminalRep> t = new TruckTerminalRep(name, this);
+			Ptr<TruckSegmentRep> t = new TruckSegmentRep(name, this);
 			instance_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Boat segment") {
-			Ptr<BoatTerminalRep> t = new BoatTerminalRep(name, this);
+			Ptr<BoatSegmentRep> t = new BoatSegmentRep(name, this);
 			instance_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Plane segment") {
-			Ptr<PlaneTerminalRep> t = new PlaneTerminalRep(name, this);
+			Ptr<PlaneSegmentRep> t = new PlaneSegmentRep(name, this);
 			instance_[name] = t;
 			newInst = t;
 		}
@@ -532,7 +532,11 @@ string StatsRep::attribute(const string& name){
 		else if("Truck segment" == name) s << stats_->truckSegments();
 		else if("Boat segment" == name) s << stats_->boatSegments();
 		else if("Plane segment" == name) s << stats_->planeSegments();
-		else if("expedite percentage" == name) s << stats_->expeditePercentage(); //precision?
+		else if("expedite percentage" == name){ 
+			char buf[MAX_BUF];
+			std::sprintf(buf, "%.2f", stats_->expeditePercentage());
+			s << std::string(buf);
+		}
 		else {
 			throw string("Error: Invalid attribute => " + name);
 		}
