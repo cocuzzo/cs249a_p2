@@ -60,7 +60,9 @@ public:
 		Engine::Ptr eng = manager_->engine();
 		loc_ = eng->locationNew(name, type);
 	}
-
+	
+	~LocationRep();
+	
 	// Instance method
 	string attribute(const string& name);
 
@@ -144,6 +146,8 @@ public:
 		Engine::Ptr eng = manager_->engine();
 		seg_ = eng->segmentNew(name, type);
 	}
+	
+	~SegmentRep();
 
 	// Instance method
 	string attribute(const string& name);
@@ -394,6 +398,11 @@ void ManagerImpl::instanceDel(const string& name) {
 
 /* LocationRep Impl */
 
+LocationRep::~LocationRep(){
+	Engine::Ptr eng = manager_->engine();
+	eng->locationDel(loc_);
+}
+
 string LocationRep::attribute(const string& name) {
 	string response;
 	try{	
@@ -408,6 +417,7 @@ string LocationRep::attribute(const string& name) {
 	catch(string& msg){
 		cerr << msg << endl;
 	}//end catch block
+	return response;
 }
 
 
@@ -428,6 +438,11 @@ int LocationRep::segmentNumber(const string& name) {
 
 /* SegmentRep Impl */
 
+SegmentRep::~SegmentRep(){
+	Engine::Ptr eng = manager_->engine();
+	eng->segmentDel(seg_);
+}
+
 string SegmentRep::attribute(const string& name){
 	string response;
 	try{
@@ -437,8 +452,7 @@ string SegmentRep::attribute(const string& name){
 		}
 		else if("length" == name){
 			Mile length = seg_->length();
-			//response = length.toString();
-			response = "PRINT MILES HERE";
+			response = length.toString();
 		}
 		else if("return segment" == name){
 			Segment::Ptr returnSeg = seg_->returnSegment();
@@ -446,8 +460,7 @@ string SegmentRep::attribute(const string& name){
 		}
 		else if("difficulty" == name){
 			Difficulty diff = seg_->difficulty();
-			//response = diff.toString();
-			response = "PRINT DIFFICULTY HERE";
+			response = diff.toString();
 		}
 		else if("expedite support" == name){
 			Segment::Expedite exp = seg_->expedite();
@@ -542,7 +555,7 @@ string FleetRep::attribute(const string& name){
 		string type = getTypeStr(name);
 		string attr = getAttrStr(name);
 		Engine::Ptr eng = manager_->engine();
-		/*
+		
 		if("Truck" == type && "cost" == attr) response = eng->truckFleet()->cost().toString();
 		else if("Truck" == type && "capacity" == attr) response = eng->truckFleet()->capacity().toString();
 		else if("Truck" == type && "speed" == attr) response = eng->truckFleet()->speed().toString();
@@ -552,7 +565,7 @@ string FleetRep::attribute(const string& name){
 		else if("Plane" == type && "cost" == attr) response = eng->planeFleet()->cost().toString();
 		else if("Plane" == type && "capacity" == attr) response = eng->planeFleet()->capacity().toString();
 		else if("Plane" == type && "speed" == attr) response = eng->planeFleet()->speed().toString();
-		*/
+		
 	}//end try block
 	catch(string msg){
 		cerr << msg << endl;
@@ -561,43 +574,54 @@ string FleetRep::attribute(const string& name){
 }
 
 void FleetRep::attributeIs(const string& name, const string& v){
-	try{
+	try {
 		string type = getTypeStr(name);
 		string attr = getAttrStr(name);
 		Engine::Ptr eng = manager_->engine();
-		/*
+		Cost cost; Capacity cap; Speed speed;
+		
 		if("Truck" == type && "cost" == attr){
-			eng->truckFleet()->costIs(???);
+			cost = Cost(atof( v.c_str()) );
+			eng->truckFleet()->costIs(cost);
 		}
 		else if("Truck" == type && "capacity" == attr){
-			eng->truckFleet()->capacityIs(???);
+			cap = Capacity(atoi( v.c_str()) );
+			eng->truckFleet()->capacityIs(cap);
 		}
 		else if("Truck" == type && "speed" == attr){
-			eng->truckFleet()->speedIs(???);
+			speed = Speed(atof( v.c_str()) );
+			eng->truckFleet()->speedIs(speed);
 		}
 		else if("Boat" == type && "cost" == attr){
-			eng->boatFleet()->cost()
+			cost = Cost(atof( v.c_str()) );
+			eng->boatFleet()->costIs(cost);
 		}
 		else if("Boat" == type && "capacity" == attr){
-			eng->boatFleet()->capacityIs(???);
+			cap = Capacity(atoi( v.c_str()) );
+			eng->boatFleet()->capacityIs(cap);
 		}
 		else if("Boat" == type && "speed" == attr){
-			eng->boatFleet()->speedIs(???);
+			speed = Speed(atof( v.c_str()) );
+			eng->boatFleet()->speedIs(speed);
 		}
 		else if("Plane" == type && "cost" == attr){
-			eng->planeFleet()->cost(???);
+			cost = Cost(atof( v.c_str()) );
+			eng->planeFleet()->costIs(cost);
 		}
-		else if("Plane" == type && "capacity" == attr)
-			eng->planeFleet()->capacityIs(???);
+		else if("Plane" == type && "capacity" == attr){
+			cap = Capacity(atoi( v.c_str()) );
+			eng->planeFleet()->capacityIs(cap);
 		}
 		else if("Plane" == type && "speed" == attr){
-			eng->planeFleet()->speedIs(???);
+			speed = Speed(atof( v.c_str()) );
+			eng->planeFleet()->speedIs(speed);
 		}
-		*/
-	}
+		
+	}//end try block
 	catch(string msg){
 		cerr << msg << endl;
 	}//end catch block
+	
 }
 
 string FleetRep::getTypeStr(const string& name){
@@ -648,7 +672,7 @@ string ConnRep::attribute(const string& name){
 			Location::Ptr loc = eng->location(locStr);
 			Mile maxDist; Cost maxCost; Time maxTime; string exp = "no";
 			parseAttr(tokens, maxDist, maxCost, maxTime, exp);
-			Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
+			//Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
 			//vector<Path::Ptr> paths = eng->constrainedGraph(loc, maxDist, maxCost, maxTime, expedited);
 			//stringify paths
 			//response = 

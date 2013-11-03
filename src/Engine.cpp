@@ -161,6 +161,12 @@ SegmentReactor::onSegmentExpedite() {
 /******************************************************************************
 ** Engine Impl
 ******************************************************************************/
+Engine::Engine(){
+	boatFleet_ = Fleet::FleetNew();
+	planeFleet_ = Fleet::FleetNew();
+	truckFleet_ = Fleet::FleetNew();
+}
+
 Engine::~Engine(){
 
 }
@@ -212,7 +218,7 @@ Engine::segmentNew(const std::string& name, Segment::SegmentType segmentType){
   // add reactor to internal name->reactor map
   auto result = segReactors_.insert(make_pair(name, reactor));
   if (result.second == false) {
-    free(reactor);
+    delete reactor;
     cerr << "unable to add segment reactor to map in Engine::segmentNew" << endl;
   } else {
     // notify interested party
