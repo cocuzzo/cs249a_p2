@@ -356,8 +356,8 @@ Stats::onLocationNew( Location::Ptr loc ){
     if (loc->locationType() == Location::customerLoc()) customers_++;
     else if (loc->locationType() == Location::portLoc()) ports_++;
     else if (loc->locationType() == Location::boatTerminalLoc()) boatTerminals_++;
-    else if (loc->locationType() == Location::boatTerminalLoc()) planeTerminals_++;
-    else if (loc->locationType() == Location::boatTerminalLoc()) truckTerminals_++;
+    else if (loc->locationType() == Location::planeTerminalLoc()) planeTerminals_++;
+    else if (loc->locationType() == Location::truckTerminalLoc()) truckTerminals_++;
     else cerr << "undefined location type in Stats::onLocationNew" << endl;
   }
 }
@@ -368,8 +368,8 @@ Stats::onLocationDel( Location::Ptr loc ){
     if (loc->locationType() == Location::customerLoc()) customers_--;
     else if (loc->locationType() == Location::portLoc()) ports_--;
     else if (loc->locationType() == Location::boatTerminalLoc()) boatTerminals_--;
-    else if (loc->locationType() == Location::boatTerminalLoc()) planeTerminals_--;
-    else if (loc->locationType() == Location::boatTerminalLoc()) truckTerminals_--;
+    else if (loc->locationType() == Location::planeTerminalLoc()) planeTerminals_--;
+    else if (loc->locationType() == Location::truckTerminalLoc()) truckTerminals_--;
     else cerr << "undefined location type in Stats::onLocationDel" << endl;
   }
 }
