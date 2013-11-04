@@ -408,6 +408,26 @@ double Stats::expeditePercentage() const {
 	return perc;
 } 
 
+/******************************************************************************
+** Path Impl
+******************************************************************************/
+
+string Path::toString(){
+	ostringstream ss;
+	unsigned int numSegments = segments_.size();
+	for(unsigned int i = 0; i < numSegments; i++){
+		Segment::Ptr seg = segments_[i];
+		if(i != (numSegments - 1)){
+			ss << seg->source()->name() << "(" << seg->name() << ":"
+				 << seg->length().toString() << ":"
+				 << seg->returnSegment()->name() << ") ";
+		}
+		else{
+			ss << seg->source()->name();
+		}
+	}
+	return ss.str();
+}
 
 
 

@@ -249,7 +249,10 @@ private:
 	
 	void tokenizeLine(vector<string>& tokens, const string& str);
 	void parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& time, string& exp);
+	string stringifyConnect(vector<Path::Ptr>& paths);
+	string stringifyExplore(vector<Path::Ptr>& paths);
 };
+
 class FleetRep : public Instance {
 public:
 	//typedef Fwk::Ptr<FleetRep const> PtrConst;
@@ -758,6 +761,29 @@ void ConnRep::parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& ti
 			throw string("Error: Invalid attribute => " + tokens[i]);
 		} 
 	}//end while
+}
+
+string ConnRep::stringifyConnect(vector<Path::Ptr>& paths){
+	ostringstream ss;
+	for(unsigned int i = 0; i < paths.size(); i++){
+		Path::Ptr p = paths[i];
+		Cost c = p->cost();
+		Time t = p->time();
+		Segment::Expedite exp = p->expedited();
+		string expStr = (Segment::supported() == exp) ? "yes" : "no";
+		ss << c.toString() << " " << t.toString() << " "
+		<< expStr << "; " << p->toString() << "\n";
+	}
+	return ss.str();
+}
+
+string ConnRep::stringifyExplore(vector<Path::Ptr>& paths){
+	ostringstream ss;
+	for(unsigned int i = 0; i < paths.size(); i++){
+		Path::Ptr p = paths[i];
+		ss << p->toString() << "\n";
+	}
+	return ss.str();
 }
 
 void ConnRep::attributeIs(const string& name, const string& v){

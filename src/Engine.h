@@ -455,6 +455,7 @@ public:
 	void segmentAdd(Segment::Ptr _segment);
 	U32 segments(){ return segments_.size(); }
 	std::string toString();
+	
 protected:
 	Path() { }
 	
