@@ -633,6 +633,15 @@ public:
 protected:
 	Stats(Engine* eng) {
 		notifierIs(eng);
+		customers_ = 0;
+		ports_ = 0;
+		boatTerminals_ = 0;
+		planeTerminals_ = 0;
+		truckTerminals_ = 0;
+		boatSegments_ = 0;
+		planeSegments_ = 0;
+		truckSegments_ = 0;
+		expediteSegments_ = 0;
 	}
 
 	U32 customers_;

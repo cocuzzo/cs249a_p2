@@ -22,6 +22,7 @@ class ConnRep;
 class ManagerImpl : public Instance::Manager {
 public:
 	ManagerImpl();
+	~ManagerImpl(){ }
 
 	// Manager method
 	Ptr<Instance> instanceNew(const string& name, const string& type);
@@ -205,16 +206,24 @@ public:
 	//typedef Fwk::Ptr<StatsRep const> PtrConst;
 	//typedef Fwk::Ptr<StatsRep> Ptr;
 	
-	StatsRep(const string& name, ManagerImpl* manager) :
-		Instance(name), manager_(manager) {
-		stats_ = Stats::StatsNew(manager_->engine().ptr());
+	static Ptr<StatsRep> StatsRepNew(const string& name, ManagerImpl* manager) {
+		Ptr<StatsRep> m = new StatsRep(name, manager);
+    return m;
 	}
+	
 	string attribute(const string& name);
 	void attributeIs(const string& name, const string& v);
 	
 private:
-	Ptr<ManagerImpl> manager_;
+	StatsRep(const string& name, ManagerImpl* manager) :
+		Instance(name), manager_(manager) {
+		stats_ = Stats::StatsNew(manager_->engine().ptr());
+	}
+	
+	//Ptr<ManagerImpl> manager_;
+	ManagerImpl* manager_;
 	Stats::Ptr stats_;
+	
 };
 
 class ConnRep : public Instance {
@@ -222,14 +231,21 @@ public:
 	//typedef Fwk::Ptr<ConnRep const> PtrConst;
 	//typedef Fwk::Ptr<ConnRep> Ptr;
 	
-	ConnRep(const string& name, ManagerImpl* manager) :
-		Instance(name), manager_(manager) { 
+	static Ptr<ConnRep> ConnRepNew(const string& name, ManagerImpl* manager) {
+		Ptr<ConnRep> m = new ConnRep(name, manager);
+    return m;
 	}
+	
 	string attribute(const string& name);
 	void attributeIs(const string& name, const string& v);
 	
 private:
-	Ptr<ManagerImpl> manager_;
+	ConnRep(const string& name, ManagerImpl* manager) :
+		Instance(name), manager_(manager) { 
+	}
+	
+	//Ptr<ManagerImpl> manager_;
+	ManagerImpl* manager_;
 	
 	void tokenizeLine(vector<string>& tokens, const string& str);
 	void parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& time, string& exp);
@@ -239,15 +255,21 @@ public:
 	//typedef Fwk::Ptr<FleetRep const> PtrConst;
 	//typedef Fwk::Ptr<FleetRep> Ptr;
 	
-	FleetRep(const string& name, ManagerImpl* manager) :
-		Instance(name), manager_(manager) { 
+	static Ptr<FleetRep> FleetRepNew(const string& name, ManagerImpl* manager) {
+		Ptr<FleetRep> m = new FleetRep(name, manager);
+    return m;
 	}
 	
 	string attribute(const string& name);
 	void attributeIs(const string& name, const string& v);
 	
 private:
-	Ptr<ManagerImpl> manager_;
+	FleetRep(const string& name, ManagerImpl* manager) :
+		Instance(name), manager_(manager) { 
+	}
+	
+	//Ptr<ManagerImpl> manager_;
+	ManagerImpl* manager_;
 	
 	string getTypeStr(const string& name);
 	string getAttrStr(const string& name);
@@ -263,9 +285,9 @@ private:
 
 ManagerImpl::ManagerImpl() { 
 	engine_ = Engine::EngineNew();
-	statsRep_ = new StatsRep("StatsRep", this);
-	fleetRep_ = new FleetRep("FleetRep", this);
-	connRep_ = new ConnRep("ConnRep", this);
+	statsRep_ = StatsRep::StatsRepNew("StatsRep", this);
+	fleetRep_ = FleetRep::FleetRepNew("FleetRep", this);
+	connRep_ = ConnRep::ConnRepNew("ConnRep", this);
 }
 
 Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
