@@ -21,7 +21,7 @@ Location::segmentAdd(Fwk::Ptr<Segment> _segment){
   for (Fwk::Ptr<Segment> s : segments_) {
     if (s->name() == _segment->name()) return;
   }
-  segments_.push_back(_segment);
+  segments_.push_back(_segment.ptr());
   // TODO: no need to notify notifiee here?
 }
 
@@ -90,8 +90,8 @@ Segment::sourceIs(Location::Ptr _source){
 
 void
 Segment::returnSegmentIs(Segment::Ptr _returnSegment){
-	if (returnSegment_ == _returnSegment) return;
-  returnSegment_ = _returnSegment;
+	if (returnSegment_ == _returnSegment.ptr()) return;
+  returnSegment_ = _returnSegment.ptr();
   if(notifiee_) try {
     notifiee_->onSegmentReturn();
   } catch(...) { cerr << "notifiee exception caught during Segment::returnSegmentIs" << endl; }
@@ -139,14 +139,14 @@ Segment::NotifieeConst::notifierIs(const Segment::PtrConst& _notifier) {
 void
 SegmentReactor::onSegmentSource() {
   Location::Ptr prevSource = prevSource_;
-  prevSource_ = notifier()->source();
+  prevSource_ = notifier()->source(); //PEO
   owner_->handleSegmentSource(notifier(), prevSource);
 }
 
 void
 SegmentReactor::onSegmentReturn() {
   Segment::Ptr prevReturn = prevReturn_;
-  prevReturn_ = notifier()->returnSegment();
+  prevReturn_ = notifier()->returnSegment(); //PEO
   owner_->handleSegmentReturn(notifier(), prevReturn);
 }
 
