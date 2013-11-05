@@ -14,6 +14,7 @@ Location::Location(const string& _name, LocationType _locType) {
 
 Location::~Location() {
   // TODO: need to clear notifiees strong ptr?
+  // clear segment source ptrs
 }
 
 void
@@ -77,6 +78,8 @@ Segment::Segment(const string& _name, SegmentType _segType){
 
 Segment::~Segment() {
   // need to clear notifiees strong ptr?
+  // clear source location's ptr to this
+  // clear return segment's ptr to this
 }
 
 void
