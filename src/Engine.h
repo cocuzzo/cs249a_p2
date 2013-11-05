@@ -439,31 +439,32 @@ protected:
 
 class Path : public Fwk::PtrInterface<Path> {
 public:
-	typedef Fwk::Ptr<Path const> PtrConst;
+  typedef Fwk::Ptr<Path const> PtrConst;
 	typedef Fwk::Ptr<Path> Ptr;
 	static Path::Ptr PathNew() {
 		Ptr m = new Path();
     return m;	
 	}
-	static Path::Ptr PathNew(Path::Ptr _path);
+	static Path::Ptr PathNew(Path::Ptr _path); // copy constructor
 
 	Mile distance() { return distance_; }
 	Cost cost() { return cost_; }
 	Time time() { return time_; }
 	Segment::Expedite expedited() { return expedited_; }
 	
-	void segmentAdd(Segment::Ptr _segment);
-	U32 segments(){ return segments_.size(); }
-	std::string toString();
+	bool segmentAdd(Segment::Ptr _segment);
+  U32 segments(){ return segments_.size(); }
+  std::string toString();
+  bool containsNode(Location::Ptr node);
 	
 protected:
 	Path() { }
-	
-	Mile distance_;
+	Mile length_;
 	Cost cost_;
 	Time time_;
 	Segment::Expedite expedited_;
 	std::vector<Segment::Ptr> segments_;
+	std::vector<Location::Ptr> nodes_;
 };
 
 
