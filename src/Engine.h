@@ -178,7 +178,8 @@ protected:
 	explicit Location(const std::string& _name, LocationType _locType);
 	LocationType locType_;
 	std::string name_;
-	std::list<Fwk::Ptr<Segment>> segments_;
+	//std::list<Fwk::Ptr<Segment>> segments_; //PEO
+	std::list<Segment*> segments_;
 
 	NotifieeConst *notifiee_;
   void newNotifiee( Location::NotifieeConst * n ) const {
@@ -352,7 +353,8 @@ protected:
 	std::string name_;
 	Location::Ptr source_;
 	Mile length_;
-	Segment::Ptr returnSegment_;
+	//Segment::Ptr returnSegment_; //PEO
+	Segment* returnSegment_;
 	Difficulty diff_;
 	Expedite expedite_;
 
@@ -506,8 +508,10 @@ protected:
 	}
 
 	Engine* owner_;
-	Location::Ptr prevSource_;
-	Segment::Ptr prevReturn_;
+	Location::Ptr prevSource_; //PEO
+	//Location* prevSource_;
+	Segment::Ptr prevReturn_; //PEO
+	//Segment* prevReturn_;
 };
 
 

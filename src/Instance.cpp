@@ -22,7 +22,6 @@ class ConnRep;
 class ManagerImpl : public Instance::Manager {
 public:
 	ManagerImpl();
-	~ManagerImpl(){ }
 
 	// Manager method
 	Ptr<Instance> instanceNew(const string& name, const string& type);
@@ -37,16 +36,17 @@ public:
 
 
 private:
-  map<string,Ptr<Instance> > instance_;
-  
+	
   Engine::Ptr engine_;
-  
+  map<string,Ptr<Instance> > instance_;
   Ptr<StatsRep> statsRep_;
   string statsName_;
   Ptr<FleetRep> fleetRep_;
   string fleetName_;
   Ptr<ConnRep> connRep_;
   string connName_;
+  
+ 
   
 };
 
@@ -71,7 +71,8 @@ public:
   void attributeIs(const string& name, const string& v);
 
 private:
-  Ptr<ManagerImpl> manager_;
+  //Ptr<ManagerImpl> manager_;
+  ManagerImpl* manager_;
 	Location::Ptr loc_;
 	
 	int segmentNumber(const string& name);
@@ -157,7 +158,8 @@ public:
   void attributeIs(const string& name, const string& v);
 
 private:
-  Ptr<ManagerImpl> manager_;
+  //Ptr<ManagerImpl> manager_;
+  ManagerImpl* manager_;
 	Segment::Ptr seg_;
 
 };
@@ -509,6 +511,7 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 			Engine::Ptr eng = manager_->engine();
 			Location::Ptr source = eng->location(v);
 			seg_->sourceIs(source);
+			
 		}
 		else if("length" == name){
 			Mile length( atoi(v.c_str()) );
