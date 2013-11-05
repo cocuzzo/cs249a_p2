@@ -337,14 +337,40 @@ vector<Path::Ptr>
 Engine::constrainedGraph(Location::Ptr loc, Mile distance, 
                        Cost cost, Time time, Segment::Expedite expedited) {
   vector<Path::Ptr> path;
+
+  
+
+  
   return path; 
 }
 
 vector<Path::Ptr>
 Engine::connections(Location::Ptr start, Location::Ptr end){
   
-  vector<Path::Ptr> path;
-  return path; 
+  vector<Path::Ptr> foundPaths;
+  vector<Path::Ptr> frontier;
+
+  Path::Ptr curPath;
+  // for (U32 i = 0; i < start.segments(); i++) {
+  //   Segment::Ptr testSeg = start.segmentAtIndex(i);
+  //   Segment::Ptr testReturn = testSeg.returnSegment();
+  //   if (testReturn) {
+  //     Location::Ptr testNode = testReturn.source();
+  //     if (testNode) {
+  //       if (testNode) {
+  //         if (testNode == end) {
+  //           Path::Ptr testPath = Path(curPath);
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+
+  while ( !frontier.empty() ) {
+
+  }
+  
+  return foundPaths; 
 }
 
 /******************************************************************************
@@ -412,7 +438,45 @@ double Stats::expeditePercentage() const {
 ** Path Impl
 ******************************************************************************/
 
-string Path::toString(){
+Path::Ptr
+PathNew(Path::Ptr _path) {
+  Path::Ptr newPath = PathNew();
+  for (U32 i = 0; i < _path.segments(); i++) {
+    newPath->segmentAdd(_path->segmentAtIndex(i));
+  }
+}
+
+bool
+Path::segmentAdd(Segment::Ptr _segment) {
+  // only adds the segment if it has a valid return segment
+  // which has a valid source node (valid end location)
+  // and adding the new segment does not violate the Path constraints
+
+  // Segment::Ptr testReturn;
+  // Location::Ptr testNode;
+
+  // if ( !_segment ) return false; // arg is not a valid segment
+  // if ( (expedited_ == Segment::supported()) && 
+  //      (_segment.expedited() == Segment::unsupported()) ) return false;
+  // if ( !(testReturn = _segment.returnSegment()) ) return false; // no valid return segment
+  // if ( !(testNode = testReturn.source()) ) return false; // no valid destination location
+  // if ( this.containsNode(testLoc) ) return false;
+  // segments_.push_back(_segment);
+  // nodes_.push_back(testLoc);
+  // length_ += _segment.
+  // if ( expedited_ == Segment::supported() ) {
+  //   cost_ += 
+  //   time_ += 
+  // } else {  
+  //   cost_ += 
+  //   time_ += 
+  // }
+
+  return true;
+}
+
+string
+Path::toString(){
 	ostringstream ss;
 	unsigned int numSegments = segments_.size();
 	for(unsigned int i = 0; i < numSegments; i++){
@@ -429,6 +493,12 @@ string Path::toString(){
 	return ss.str();
 }
 
-
+bool
+Path::containsNode(Location::Ptr _node) {
+  for (Location::Ptr node : nodes_) {
+    if (_node == node) return true;
+  }
+  return false;
+}
 
 
