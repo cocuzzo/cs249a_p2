@@ -132,7 +132,9 @@ public:
 		Ptr m = new Location(_name, _locType);
   	return m;
 	}
-	~Location();
+	
+	//~Location();
+	
 	virtual void segmentAdd(Fwk::Ptr<Segment> _segment);
 	virtual void segmentRemove(Fwk::Ptr<Segment> _segment);
 	inline U32 segments() const { return segments_.size(); }
@@ -147,6 +149,8 @@ public:
 		// Non-const interface =================================
 		~NotifieeConst();
 		virtual void notifierIs(const Location::PtrConst& _notifier);
+		
+		virtual void onLocationDel() {}
 		
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
@@ -169,6 +173,7 @@ public:
 			Ptr m = new Notifiee();
 				return m;
 		}
+		
 	// Constructors ========================================
 	protected:
 		Notifiee() {}
@@ -178,8 +183,8 @@ protected:
 	explicit Location(const std::string& _name, LocationType _locType);
 	LocationType locType_;
 	std::string name_;
-	//std::list<Fwk::Ptr<Segment>> segments_; //PEO
-	std::list<Segment*> segments_;
+	std::list<Fwk::Ptr<Segment>> segments_; //PEO
+	//std::list<Segment*> segments_;
 
 	NotifieeConst *notifiee_;
   void newNotifiee( Location::NotifieeConst * n ) const {
@@ -293,7 +298,7 @@ public:
 		Ptr m = new Segment(_name, _segType);
     return m;
 	}
-	~Segment();
+	//~Segment();
 
 	inline Location::Ptr source() const { return source_; }
 	virtual void sourceIs(Location::Ptr _loc);
@@ -319,6 +324,7 @@ public:
     virtual void onSegmentSource() {}
 		virtual void onSegmentReturn() {}
 		virtual void onSegmentExpedite() {}
+		virtual void onSegmentDel() {}
 		
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
@@ -353,8 +359,8 @@ protected:
 	std::string name_;
 	Location::Ptr source_;
 	Mile length_;
-	//Segment::Ptr returnSegment_; //PEO
-	Segment* returnSegment_;
+	Segment::Ptr returnSegment_; //PEO
+	//Segment* returnSegment_;
 	Difficulty diff_;
 	Expedite expedite_;
 
@@ -448,13 +454,15 @@ public:
 		return m;
 	}
 
+	void onLocationDel();
+	
 protected:
 	LocationReactor(Location *_loc, Engine* _owner) {
 		notifierIs(_loc);
 		owner_ = _owner;
 	}
 
-	Engine* owner_;
+	Fwk::Ptr<Engine> owner_; //PEO
 };
 
 class SegmentReactor : public Segment::Notifiee {
@@ -467,7 +475,8 @@ public:
 
 	void onSegmentSource();
 	void onSegmentReturn();
-	void onSegmentExpedite(); 
+	void onSegmentExpedite();
+	void onSegmentDel(); 
 
 protected:
 	SegmentReactor(Segment* _seg, Engine* _owner) {
@@ -475,7 +484,7 @@ protected:
 		owner_ = _owner;
 	}
 
-	Engine* owner_;
+	Fwk::Ptr<Engine> owner_;       //PEO
 	Location::Ptr prevSource_; //PEO
 	//Location* prevSource_;
 	Segment::Ptr prevReturn_; //PEO
@@ -564,7 +573,7 @@ public:
 
 protected:
 	Engine();
-
+	
 	std::map<std::string, LocationReactor::Ptr> locReactors_;
 	std::map<std::string, SegmentReactor::Ptr> segReactors_;
 	Fleet::Ptr boatFleet_;

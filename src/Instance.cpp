@@ -15,6 +15,8 @@ using namespace std;
 ** Rep Layer Class Definitions 
 **********************************************************************************/
 
+class LocationRep;
+class SegmentRep;
 class StatsRep;
 class FleetRep;
 class ConnRep;
@@ -34,19 +36,21 @@ public:
   
   Engine::Ptr engine(){ return engine_; }
 
+private:  
 
-private:
-	
+  map<string,Ptr<LocationRep> > locReps_;
+  map<string,Ptr<SegmentRep> > segReps_;
+  
   Engine::Ptr engine_;
-  map<string,Ptr<Instance> > instance_;
-  Ptr<StatsRep> statsRep_;
+  
+ 	Ptr<StatsRep> statsRep_;
   string statsName_;
   Ptr<FleetRep> fleetRep_;
   string fleetName_;
   Ptr<ConnRep> connRep_;
   string connName_;
   
- 
+  
   
 };
 
@@ -62,13 +66,16 @@ public:
 		loc_ = eng->locationNew(name, type);
 	}
 	
-	~LocationRep();
+	~LocationRep(); //PEO
 	
 	// Instance method
 	string attribute(const string& name);
 
   // Instance method
   void attributeIs(const string& name, const string& v);
+  
+  inline Location::Ptr location() const { return loc_; }
+  void locationIs(Location::Ptr _loc){ loc_ = _loc; }
 
 private:
   //Ptr<ManagerImpl> manager_;
@@ -149,13 +156,16 @@ public:
 		seg_ = eng->segmentNew(name, type);
 	}
 	
-	~SegmentRep();
+	~SegmentRep(); //PEO
 
 	// Instance method
 	string attribute(const string& name);
 
   // Instance method
   void attributeIs(const string& name, const string& v);
+  
+  inline Segment::Ptr segment() const { return seg_; }
+  void segmentIs(Segment::Ptr _seg){ seg_ = _seg; }
 
 private:
   //Ptr<ManagerImpl> manager_;
@@ -298,7 +308,8 @@ ManagerImpl::ManagerImpl() {
 Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 	Ptr<Instance> newInst;
 	try{
-		if(instance_.find(name) != instance_.end() ||
+		if(locReps_.find(name) != locReps_.end() ||
+			 segReps_.find(name) != segReps_.end() ||
 			 name == statsName_ || 
 			 name == fleetName_ ||
 			 name == connName_  ||
@@ -309,48 +320,47 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 		
 		if (type == "Customer") {
 			Ptr<CustomerRep> t = new CustomerRep(name, this);
-			instance_[name] = t;
+			locReps_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Port") {
 			Ptr<PortRep> t = new PortRep(name, this);
-			instance_[name] = t;
+			locReps_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Truck terminal") {
 			Ptr<TruckTerminalRep> t = new TruckTerminalRep(name, this);
-			instance_[name] = t;
+			locReps_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Boat terminal") {
 			Ptr<BoatTerminalRep> t = new BoatTerminalRep(name, this);
-			instance_[name] = t;
+			locReps_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Plane terminal") {
 			Ptr<PlaneTerminalRep> t = new PlaneTerminalRep(name, this);
-			instance_[name] = t;
+			locReps_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Truck segment") {
 			Ptr<TruckSegmentRep> t = new TruckSegmentRep(name, this);
-			instance_[name] = t;
+			segReps_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Boat segment") {
 			Ptr<BoatSegmentRep> t = new BoatSegmentRep(name, this);
-			instance_[name] = t;
+			segReps_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Plane segment") {
 			Ptr<PlaneSegmentRep> t = new PlaneSegmentRep(name, this);
-			instance_[name] = t;
+			segReps_[name] = t;
 			newInst = t;
 		}
 		else if (type == "Stats") {
 			newInst = statsRep_;
 			if( "" == statsName_ ){
-				instance_[name] = statsRep_;
 				statsName_ = name;
 			}
 			else {
@@ -360,7 +370,6 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 		else if (type == "Conn") {
 			newInst = connRep_;
 			if( "" == connName_ ){
-				instance_[name] = connRep_;
 				connName_ = name;
 			}
 			else {
@@ -370,7 +379,6 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 		else if (type == "Fleet") {
 			newInst = fleetRep_;
 			if( "" == fleetName_ ){
-				instance_[name] = fleetRep_;
 				fleetName_ = name;
 			}
 			else {
@@ -392,17 +400,31 @@ Ptr<Instance> ManagerImpl::instance(const string& name) {
 	if(name == statsName_) return statsRep_;
 	else if(name == fleetName_) return fleetRep_;
 	else if(name == connName_) return connRep_;
-  map<string,Ptr<Instance> >::const_iterator t = instance_.find(name);
-  return t == instance_.end() ? NULL : (*t).second;
+  map<string,Ptr<LocationRep> >::const_iterator lRep = locReps_.find(name);
+  if(lRep != locReps_.end()) return (*lRep).second;
+  map<string,Ptr<SegmentRep> >::const_iterator sRep = segReps_.find(name);
+  if(sRep != segReps_.end()) return (*sRep).second;
+  return NULL;
 }
 
 void ManagerImpl::instanceDel(const string& name) {
 	try{
-		if(instance_.find(name) == instance_.end()){
-			throw string("Error: No instance named " + name); 
+		map<string,Ptr<LocationRep> >::const_iterator lRep = locReps_.find(name);
+		map<string,Ptr<SegmentRep> >::const_iterator sRep = segReps_.find(name);
+		
+		if(lRep != locReps_.end()){
+			Ptr<LocationRep> lr = (*lRep).second;
+			engine_->locationDel(lr->location());
+			lr->locationIs(NULL);
+			locReps_.erase(name); 
 		}
-		instance_.erase(name); //should call destructor if loc or segment?
-		if(statsName_ == name) statsName_ = "";
+		else if(sRep != segReps_.end()){
+			Ptr<SegmentRep> sr = (*sRep).second;
+			engine_->segmentDel(sr->segment());
+			sr->segmentIs(NULL);
+			segReps_.erase(name);
+		}
+		else if(statsName_ == name) statsName_ = "";
 		else if(connName_ == name) connName_ = "";
 		else if(fleetName_ == name) {
 			fleetName_ = "";
@@ -418,6 +440,7 @@ void ManagerImpl::instanceDel(const string& name) {
 			engine_->planeFleet()->speedIs(dSpeed);
 		}
 	}//end try block
+	
 	catch(string& msg){
 		cerr << msg << endl;
 	}//end catch block
@@ -426,18 +449,22 @@ void ManagerImpl::instanceDel(const string& name) {
 /* LocationRep Impl */
 
 LocationRep::~LocationRep(){
-	Engine::Ptr eng = manager_->engine();
-	eng->locationDel(loc_);
+	if(loc_){
+		Engine::Ptr eng = manager_->engine();
+		eng->locationDel(loc_);
+	}
 }
 
 string LocationRep::attribute(const string& name) {
 	string response;
 	try{	
+		if(loc_ == NULL) throw string("Error: Trying to access deleted instance");
 		int index = segmentNumber(name);
+		if(index == -1) throw string("Error: Invalid attribute => " + name);
 		//index into vector starts at 0, client will start at 1
 		Segment::Ptr seg = loc_->segmentAtIndex(index - 1);
-		if((Segment::Ptr)NULL == seg){
-			throw string("Error: Invalid segment number " + index);
+		if(NULL == seg){
+			throw string("Error: Invalid segment number ");
 		}
 		response = seg->name();
 	}//end try block
@@ -466,16 +493,20 @@ int LocationRep::segmentNumber(const string& name) {
 /* SegmentRep Impl */
 
 SegmentRep::~SegmentRep(){
-	Engine::Ptr eng = manager_->engine();
-	eng->segmentDel(seg_);
+	if(seg_){
+		Engine::Ptr eng = manager_->engine();
+		eng->segmentDel(seg_);
+	}
 }
 
 string SegmentRep::attribute(const string& name){
 	string response;
 	try{
+		if(seg_ == NULL) throw string("Error: Trying to access deleted instance");
+		
 		if("source" == name){
 			Location::Ptr source = seg_->source();
-			response = source->name();
+			if(source) response = source->name();
 		}
 		else if("length" == name){
 			Mile length = seg_->length();
@@ -483,7 +514,7 @@ string SegmentRep::attribute(const string& name){
 		}
 		else if("return segment" == name){
 			Segment::Ptr returnSeg = seg_->returnSegment();
-			response = returnSeg->name();
+			if(returnSeg) response = returnSeg->name();
 		}
 		else if("difficulty" == name){
 			Difficulty diff = seg_->difficulty();
@@ -507,11 +538,13 @@ string SegmentRep::attribute(const string& name){
 
 void SegmentRep::attributeIs(const string& name, const string& v){
 	try{	
+		if(seg_ == NULL) throw string("Error: Trying to access deleted instance");
+		
 		if("source" == name){
 			Engine::Ptr eng = manager_->engine();
 			Location::Ptr source = eng->location(v);
+			if(source == NULL) throw string("Error: Invalid source name => " + v);
 			seg_->sourceIs(source);
-			
 		}
 		else if("length" == name){
 			Mile length( atoi(v.c_str()) );
@@ -520,6 +553,7 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 		else if("return segment" == name){
 			Engine::Ptr eng = manager_->engine();
 			Segment::Ptr returnSeg = eng->segment(v);
+			if(returnSeg == NULL)	throw string("Error: Invalid return segment name => " + v);
 			seg_->returnSegmentIs(returnSeg);
 		}
 		else if("difficulty" == name){
@@ -808,4 +842,55 @@ Ptr<Instance::Manager> shippingInstanceManager() {
 }
 
 
+/* Path Algorithm */
+/*
+std::vector<Path::Ptr> constrainedGraph(Location::Ptr loc, Mile distance, Cost cost, Time time, Segment::Expedite expedited){
 
+
+
+
+
+
+}
+
+
+vector<Path::Ptr> Engine::connections(Location::Ptr start, Location::Ptr end){
+	vector<Path::Ptr> results;
+	list<Path::Ptr> frontier;
+	
+	Path::Ptr emptySlow = Path::PathNew(this, Segment::unsupported() );
+	Path::Ptr emptyFast = Path::PathNew(this, Segment::supported() );
+	
+	for(i = 0; i < start->segments(); i++){
+		Segment::Ptr seg = start->segmentAtIndex(i);
+		Path::Ptr currSlow = Path::PathNew(emptySlow);
+		Path::Ptr currFast = Path::PathNew(emptyFast);
+		bool slowValid = currSlow->segmentAdd(seg);
+		bool fastValid = currFast->segmentAdd(seg);
+		if(slowValid) frontier.push_back(currSlow);
+		if(fastValid) frontier.push_back(currFast);
+	}
+	
+	while( !frontier.empty() ) {
+		Path::Ptr curr = frontier.front();
+		frontier.pop_front;
+		Location::Ptr last = curr.lastNode();
+		if(NULL == last) continue;
+		if(end == last){
+			results.append(Path::PathNew(curr));
+			continue;
+		}
+		for(int i = 0; i < last->segments(); i++){
+			Path::Ptr currSpawn = Path::PathNew(curr);
+			Segment::Ptr seg = start->segmentAtIndex(i);
+			bool valid = currSpawn->segmentAdd(seg);
+			if(valid) frontier.push_back(currSpawn);
+		}
+
+	} // end while loop
+
+	return results;
+}
+
+
+*/

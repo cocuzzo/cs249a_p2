@@ -13,17 +13,12 @@ Location::Location(const string& _name, LocationType _locType) {
   name_ = _name;
 }
 
-Location::~Location() {
-  // TODO: need to clear notifiees strong ptr?
-  // clear segment source ptrs
-}
-
 void
 Location::segmentAdd(Fwk::Ptr<Segment> _segment){
   for (Fwk::Ptr<Segment> s : segments_) {
     if (s->name() == _segment->name()) return;
   }
-  segments_.push_back(_segment.ptr());
+  segments_.push_back(_segment);
   // TODO: no need to notify notifiee here?
 }
 
@@ -75,28 +70,34 @@ Location::NotifieeConst::notifierIs(const Location::PtrConst& _notifier) {
 Segment::Segment(const string& _name, SegmentType _segType){
   segType_ = _segType;
   name_ = _name;
-}
-
-Segment::~Segment() {
-  // need to clear notifiees strong ptr?
-  // clear source location's ptr to this
-  // clear return segment's ptr to this
+  expedite_ = Segment::unsupported();
 }
 
 void
 Segment::sourceIs(Location::Ptr _source){
   if (source_ == _source) return;
+  if (_source != NULL){
+  	if (_source->locationType() == Location::boatTerminalLoc() && 
+  		  segType_ != Segment::boatSeg()) return;
+ 		if (_source->locationType() == Location::truckTerminalLoc() && 
+  		  segType_ != Segment::truckSeg()) return;
+  	if (_source->locationType() == Location::planeTerminalLoc() && 
+  		  segType_ != Segment::planeSeg()) return;	
+  }		
   source_ = _source;
-  if(notifiee_) try {
+  if (notifiee_) try {
     notifiee_->onSegmentSource();
   } catch(...) { cerr << "notifiee exception caught during Segment::sourceIs" << endl; }
 }
 
 void
 Segment::returnSegmentIs(Segment::Ptr _returnSegment){
-	if (returnSegment_ == _returnSegment.ptr()) return;
-  returnSegment_ = _returnSegment.ptr();
-  if(notifiee_) try {
+	if (returnSegment_ == _returnSegment) return;
+	if (_returnSegment != NULL){
+		if (segType_ != _returnSegment->segmentType()) return;
+	}
+  returnSegment_ = _returnSegment;
+  if (notifiee_) try {
     notifiee_->onSegmentReturn();
   } catch(...) { cerr << "notifiee exception caught during Segment::returnSegmentIs" << endl; }
 }
@@ -137,6 +138,11 @@ Segment::NotifieeConst::notifierIs(const Segment::PtrConst& _notifier) {
 ** LocationReactor Impl
 ******************************************************************************/
 
+void
+LocationReactor::onLocationDel() {
+  owner_->locationDel(notifier());
+}
+
 /******************************************************************************
 ** SegmentReactor Impl
 ******************************************************************************/
@@ -157,6 +163,11 @@ SegmentReactor::onSegmentReturn() {
 void
 SegmentReactor::onSegmentExpedite() {
   owner_->handleSegmentExpedite(notifier());
+}
+
+void
+SegmentReactor::onSegmentDel() {
+  owner_->segmentDel(notifier());
 }
 
 /******************************************************************************
@@ -235,8 +246,11 @@ Engine::segmentNew(const std::string& name, Segment::SegmentType segmentType){
 void
 Engine::locationDel(Location::Ptr loc) {
   // iterate through segments in a location, clear the source
-  for (U32 i = 0; i < loc->segments(); i++) {
-    Segment::Ptr seg = loc->segmentAtIndex(i);
+  // the list grows smaller each iteration b/c of reactor setup,
+  // so must loop over index 0!!!
+  U32 totalSegments = loc->segments();
+  for (U32 i = 0; i < totalSegments; i++) {
+    Segment::Ptr seg = loc->segmentAtIndex(0);
     seg->sourceIs(NULL);
   }
   // remove the reactor from Engine's internal map
@@ -252,7 +266,10 @@ Engine::segmentDel(Segment::Ptr seg) {
   // remove segment from segment source's segment list
   Location::Ptr loc = seg->source();
   if (loc) loc->segmentRemove(seg);
-  // remove the reactor from Engine's internal map
+  //remove segment from returnSeg's return path!
+  Segment::Ptr returnSeg = seg->returnSegment();
+  if(returnSeg) returnSeg->returnSegmentIs(NULL);
+  //remove the reactor from Engine's internal map
   if (segReactors_.erase(seg->name()) != 1) return;
   // send out notification
   if (notifiee_) {
@@ -532,7 +549,6 @@ Path::segmentAdd(Segment::Ptr _segment) {
   nodes_.push_back(destNode);
   return true;
 }
-
 
 string
 Path::toString(){
