@@ -18,9 +18,9 @@ namespace Shipping {
 #define MAX_BUF 64
 
 // ordinal types
-class Mile : public Ordinal<Mile, int> {
+class Mile : public Ordinal<Mile, double> {
 public:
-	Mile(int num = 0) : Ordinal<Mile, int>(num) {
+	Mile(double num = 0.0) : Ordinal<Mile, double>(num) {
 		if (num < 0) {
 			std::ostringstream err;
 			err << "Mile value error: " << num;
@@ -64,7 +64,7 @@ public:
 
 class Cost : public Ordinal<Cost, double> {
 public:
-	Cost(int num = 0.0) : Ordinal<Cost, double>(num) {
+	Cost(double num = 0.0) : Ordinal<Cost, double>(num) {
 		if (num < 0) {
 			std::ostringstream err;
 			err << "Cost value error: " << num;
@@ -80,7 +80,7 @@ public:
 
 class Capacity : public Ordinal<Capacity, int> {
 public:
-	Capacity(int num = 0.0) : Ordinal<Capacity, int>(num) {
+	Capacity(int num = 0) : Ordinal<Capacity, int>(num) {
 		if (num < 0) {
 			std::ostringstream err;
 			err << "Capacity value error: " << num;
@@ -90,9 +90,9 @@ public:
 	std::string toString() { return std::to_string(value_); }
 };
 
-class Time : public Ordinal<Time, int> {
+class Time : public Ordinal<Time, double> {
 public:
-	Time(int num = 0) : Ordinal<Time, int>(num) {
+	Time(double num = 0.0) : Ordinal<Time, double>(num) {
 		if (num < 0) {
 			std::ostringstream err;
 			err << "Time value error: " << num;
@@ -438,38 +438,6 @@ protected:
 	Speed speed_;
 };
 
-
-class Path : public Fwk::PtrInterface<Path> {
-public:
-  typedef Fwk::Ptr<Path const> PtrConst;
-	typedef Fwk::Ptr<Path> Ptr;
-	static Path::Ptr PathNew() {
-		Ptr m = new Path();
-    return m;	
-	}
-	static Path::Ptr PathNew(Path::Ptr _path); // copy constructor
-
-	Mile distance() { return distance_; }
-	Cost cost() { return cost_; }
-	Time time() { return time_; }
-	Segment::Expedite expedited() { return expedited_; }
-	
-	bool segmentAdd(Segment::Ptr _segment);
-  U32 segments(){ return segments_.size(); }
-  std::string toString();
-  bool containsNode(Location::Ptr node);
-	
-protected:
-	Path() { }
-	Mile length_;
-	Cost cost_;
-	Time time_;
-	Segment::Expedite expedited_;
-	std::vector<Segment::Ptr> segments_;
-	std::vector<Location::Ptr> nodes_;
-};
-
-
 class Engine;
 
 class LocationReactor : public Location::Notifiee {
@@ -514,6 +482,8 @@ protected:
 	//Segment* prevReturn_;
 };
 
+class Path;
+class ConstrainedPath;
 
 class Engine : public Fwk::PtrInterface<Engine> {
 public:
@@ -535,6 +505,9 @@ public:
 	// look up capability for the client of the engine
 	Location::Ptr location(const std::string& name);
 	Segment::Ptr segment(const std::string& name);
+
+	Cost segmentCost(Segment::Ptr _seg, Segment::Expedite _expedite);
+	Time segmentTime(Segment::Ptr _seg, Segment::Expedite _expedite);
 	
 	inline Fleet::Ptr boatFleet() const { return boatFleet_; }
 	inline Fleet::Ptr planeFleet() const { return planeFleet_; }
@@ -545,9 +518,9 @@ public:
 	void handleSegmentExpedite( Segment::Ptr seg );
 
 	// Graph query methods
-	std::vector<Path::Ptr> constrainedGraph(Location::Ptr loc, Mile distance, Cost cost, Time time, Segment::Expedite expedited);
-	std::vector<Path::Ptr> connections(Location::Ptr start, Location::Ptr end);
-	
+	std::vector<Fwk::Ptr<ConstrainedPath>> constrainedGraph(Location::Ptr loc, Mile distance, Cost cost, Time time, Segment::Expedite expedite);
+	std::vector<Fwk::Ptr<Path>> connections(Location::Ptr start, Location::Ptr end);
+
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
 		typedef Fwk::Ptr<NotifieeConst const> PtrConst;
@@ -591,7 +564,7 @@ public:
 
 protected:
 	Engine();
-	
+
 	std::map<std::string, LocationReactor::Ptr> locReactors_;
 	std::map<std::string, SegmentReactor::Ptr> segReactors_;
 	Fleet::Ptr boatFleet_;
@@ -607,6 +580,95 @@ protected:
     Engine* me = const_cast<Engine*>(this);
     me->notifiee_ = NULL;
   }
+};
+
+class Path : public Fwk::PtrInterface<Path> {
+public:
+  typedef Fwk::Ptr<Path const> PtrConst;
+	typedef Fwk::Ptr<Path> Ptr;
+
+	static Path::Ptr PathNew(Engine::Ptr _engine, Location::Ptr _start, 
+			Segment::Expedite _expedite) {
+		Ptr m = new Path(_engine, _start, _expedite);
+		return m;
+	}
+
+	// copy constructor
+	static Path::Ptr PathNew(Path::Ptr _path) { 
+  	Ptr m = new Path(_path);
+  	return m;
+	}
+
+	Engine::Ptr engine() { return engine_; }
+	Cost cost() { return cost_; }
+	Mile length() { return length_; }
+	Time time() { return time_; }
+	Segment::Expedite expedite() { return expedite_; }
+
+	bool segmentAdd(Segment::Ptr _segment);
+  U32 numSegments(){ return segments_.size(); }
+  Location::Ptr lastNode() { return nodes_.back(); }
+  bool containsNode(Location::Ptr node);
+
+  std::vector<Segment::Ptr> segments() { return segments_; }
+  std::vector<Location::Ptr> nodes() { return nodes_; }
+
+  std::string toString();
+	
+protected:
+	// Path() {}  // needed for use in collections
+	Path(Engine::Ptr _engine, Location::Ptr _start, Segment::Expedite _expedite);
+	Path(Path::Ptr _path);
+	~Path() {}
+
+	Engine::Ptr engine_;
+
+	Cost cost_;
+	Mile length_;
+	Time time_;
+
+	Segment::Expedite expedite_;
+
+	std::vector<Segment::Ptr> segments_;
+	std::vector<Location::Ptr> nodes_;
+};
+
+class ConstrainedPath : public Fwk::PtrInterface<ConstrainedPath> {
+public:
+  typedef Fwk::Ptr<ConstrainedPath const> PtrConst;
+	typedef Fwk::Ptr<ConstrainedPath> Ptr;
+
+	static ConstrainedPath::Ptr ConstrainedPathNew(Engine::Ptr _engine, Location::Ptr _start, 
+			Segment::Expedite _expedite, Cost _costConstraint, 
+			Mile _lengthConstraint, Time _timeConstraint) {
+		Ptr m = new ConstrainedPath(_engine, _start, _expedite, _costConstraint, 
+			  												_lengthConstraint, _timeConstraint);
+		return m;
+	}
+
+	// copy constructor
+	static ConstrainedPath::Ptr ConstrainedPathNew(ConstrainedPath::Ptr _cpath) {
+		Ptr m = new ConstrainedPath(_cpath);
+		return m;
+	}
+
+	Path::Ptr path() { return path_; }
+	Cost costConstraint() { return costConstraint_; }
+	Mile lengthConstraint() { return lengthConstraint_; }
+	Time timeConstraint() { return timeConstraint_; }
+
+	bool segmentAdd(Segment::Ptr _segment);
+
+protected:
+	// ConstrainedPath() {} // needed for use in collections
+	ConstrainedPath(Engine::Ptr _engine, Location::Ptr _start, Segment::Expedite _expedite,
+	 Cost _costConstraint, Mile _lengthConstraint, Time _timeConstraint);
+	ConstrainedPath(ConstrainedPath::Ptr _cpath);
+
+	Path::Ptr path_;
+	Cost costConstraint_;
+	Mile lengthConstraint_;
+	Time timeConstraint_;
 };
 
 

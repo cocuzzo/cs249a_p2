@@ -1,5 +1,6 @@
 #include "Instance.h"
 #include "Engine.h"
+#include <cassert>
 
 using namespace std;
 using namespace Shipping;
@@ -336,15 +337,11 @@ There should be no other leading or trailing whitespace.
 Note that, as a floating-point value, the lengths should be printed to 2 decimals.
 */
 
-vector<Path::Ptr>
+vector<ConstrainedPath::Ptr>
 Engine::constrainedGraph(Location::Ptr loc, Mile distance, 
-                       Cost cost, Time time, Segment::Expedite expedited) {
-  vector<Path::Ptr> path;
-
-  
-
-  
-  return path; 
+                       Cost cost, Time time, Segment::Expedite expedite) {
+  vector<ConstrainedPath::Ptr> paths;  
+  return paths; 
 }
 
 vector<Path::Ptr>
@@ -375,6 +372,56 @@ Engine::connections(Location::Ptr start, Location::Ptr end){
   
   return foundPaths; 
 }
+
+//----------| Protected Implementation |------------//
+#define EXPEDITED_RATE_COST 1.5
+Cost
+Engine::segmentCost(Segment::Ptr _seg, Segment::Expedite _expedite) {
+  Cost cost;
+  if (_seg->segmentType() == Segment::boatSeg()) {
+    cost = boatFleet_->cost();
+  } else if (_seg->segmentType() == Segment::planeSeg()) {
+    cost = planeFleet_->cost();
+  } else if (_seg->segmentType() == Segment::truckSeg()) {
+    cost = truckFleet_->cost();
+  } else {
+    cerr << "bad segmentType in method Engine::segmentCost" << endl;
+    return Cost();
+  } 
+
+  Cost segmentCost = Cost( cost.value() * _seg->difficulty().value() * _seg->length().value() );
+  if (_expedite == Segment::supported()) {
+    assert(_seg->expedite() == Segment::supported()); // MUST be true
+    return Cost( segmentCost.value() * EXPEDITED_RATE_COST );
+  } else {
+    return segmentCost;
+  }  
+}
+
+#define EXPEDITED_RATE_TIME 1.3
+Time
+Engine::segmentTime(Segment::Ptr _seg, Segment::Expedite _expedite) {
+  Speed speed;
+  if (_seg->segmentType() == Segment::boatSeg()) {
+    speed = boatFleet_->speed();
+  } else if (_seg->segmentType() == Segment::planeSeg()) {
+    speed = planeFleet_->speed();
+  } else if (_seg->segmentType() == Segment::truckSeg()) {
+    speed = truckFleet_->speed();
+  } else {
+    cerr << "bad segmentType in method Engine::segmentTime" << endl;
+    return Time();
+  } 
+
+  Time segmentTime = Time( _seg->length().value() / speed.value() );
+  if (_expedite == Segment::supported()) {
+    assert(_seg->expedite() == Segment::supported()); // MUST be true
+    segmentTime = Time( segmentTime.value() / EXPEDITED_RATE_TIME );
+  }
+  return segmentTime;
+}
+
+
 
 /******************************************************************************
 ** Stats Impl
@@ -440,43 +487,52 @@ double Stats::expeditePercentage() const {
 /******************************************************************************
 ** Path Impl
 ******************************************************************************/
-
-Path::Ptr
-PathNew(Path::Ptr _path) {
-  Path::Ptr newPath = PathNew();
-  for (U32 i = 0; i < _path.segments(); i++) {
-    newPath->segmentAdd(_path->segmentAtIndex(i));
-  }
+Path::Path(Engine::Ptr _engine, Location::Ptr _start, Segment::Expedite _expedite) :
+  engine_(_engine),
+  expedite_(_expedite)
+{
+  nodes_.push_back(_start);
 }
+
+Path::Path(Path::Ptr _path) :
+  engine_(_path->engine()),
+  cost_(_path->cost()),
+  length_(_path->length()),
+  time_(_path->time()),
+  expedite_(_path->expedite()),
+  segments_(_path->segments()),
+  nodes_(_path->nodes())
+{}
 
 bool
 Path::segmentAdd(Segment::Ptr _segment) {
   // only adds the segment if it has a valid return segment
   // which has a valid source node (valid end location)
-  // and adding the new segment does not violate the Path constraints
+  Segment::Ptr testReturn;
+  Location::Ptr destNode;
 
-  // Segment::Ptr testReturn;
-  // Location::Ptr testNode;
+  if ( !_segment ) return false; // arg is not a valid segment
+  if ( !(testReturn = _segment->returnSegment()) ) return false; // no valid return segment
+  if ( !(destNode = testReturn->source()) ) return false; // no valid destination location
 
-  // if ( !_segment ) return false; // arg is not a valid segment
-  // if ( (expedited_ == Segment::supported()) && 
-  //      (_segment.expedited() == Segment::unsupported()) ) return false;
-  // if ( !(testReturn = _segment.returnSegment()) ) return false; // no valid return segment
-  // if ( !(testNode = testReturn.source()) ) return false; // no valid destination location
-  // if ( this.containsNode(testLoc) ) return false;
-  // segments_.push_back(_segment);
-  // nodes_.push_back(testLoc);
-  // length_ += _segment.
-  // if ( expedited_ == Segment::supported() ) {
-  //   cost_ += 
-  //   time_ += 
-  // } else {  
-  //   cost_ += 
-  //   time_ += 
-  // }
+  // is the destination location already in the nodes list?
+  if ( containsNode(destNode) ) return false;
 
+  // verify that the Segment supports expedited shipping if 
+  // this Path is designated as expedited
+  if ( (expedite_ == Segment::supported()) && 
+       (_segment->expedite() == Segment::unsupported()) ) return false;
+
+  // update Path stats
+  cost_ = Cost(cost_.value() + engine_->segmentCost(_segment, expedite_).value());
+  time_ = Time(time_.value() + engine_->segmentTime(_segment, expedite_).value());
+  length_ = Mile(length_.value() + _segment->length().value());
+
+  segments_.push_back(_segment);
+  nodes_.push_back(destNode);
   return true;
 }
+
 
 string
 Path::toString(){
@@ -504,4 +560,39 @@ Path::containsNode(Location::Ptr _node) {
   return false;
 }
 
+/******************************************************************************
+** ConstrainedPath Impl
+******************************************************************************/
+ConstrainedPath::ConstrainedPath(Engine::Ptr _engine, Location::Ptr _start,
+    Segment::Expedite _expedite, Cost _costConstraint, 
+    Mile _lengthConstraint, Time _timeConstraint) :
+  costConstraint_(_costConstraint),
+  lengthConstraint_(_lengthConstraint),
+  timeConstraint_(_timeConstraint) 
+{
+  path_ = Path::PathNew(_engine, _start, _expedite);
+}
 
+ConstrainedPath::ConstrainedPath(ConstrainedPath::Ptr _cpath) :
+  path_(_cpath->path()),
+  costConstraint_(_cpath->costConstraint()),
+  lengthConstraint_(_cpath->lengthConstraint()),
+  timeConstraint_(_cpath->timeConstraint()) 
+{}
+
+bool
+ConstrainedPath::segmentAdd(Segment::Ptr _segment) {
+  // first check that adding the new segment does not violate the constraints
+  // compute new ConstrainedPath stats
+  Cost newCost = Cost(path_->cost().value() + path_->engine()->segmentCost(_segment, path_->expedite()).value());
+  Time newTime = Time(path_->time().value() + path_->engine()->segmentTime(_segment, path_->expedite()).value());
+  Mile newLength = Mile(path_->length().value() + _segment->length().value());
+
+  // check if any constraints are violated
+  if ( (newCost > costConstraint_) || (newLength > lengthConstraint_) || (newTime > timeConstraint_) ) {
+    return false;
+  }
+
+  // now let the Path class determine if this Segment can be added
+  return path_->segmentAdd(_segment);
+}

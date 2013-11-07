@@ -772,7 +772,7 @@ string ConnRep::stringifyConnect(vector<Path::Ptr>& paths){
 		Path::Ptr p = paths[i];
 		Cost c = p->cost();
 		Time t = p->time();
-		Segment::Expedite exp = p->expedited();
+		Segment::Expedite exp = p->expedite();
 		string expStr = (Segment::supported() == exp) ? "yes" : "no";
 		ss << c.toString() << " " << t.toString() << " "
 		<< expStr << "; " << p->toString() << "\n";
