@@ -27,7 +27,11 @@ public:
 			throw err.str();
 		}
 	}
-	std::string toString() { return std::to_string(value_); }
+	std::string toString() { 
+		char buf[MAX_BUF];
+		std::sprintf(buf, "%.2f", value_);
+		return std::string(buf);
+	}
 };
 
 class Difficulty : public Ordinal<Difficulty, double> {
@@ -99,7 +103,11 @@ public:
 			throw err.str();
 		}
 	}
-	std::string toString() { return std::to_string(value_); }
+	std::string toString() { 
+		char buf[MAX_BUF];
+		std::sprintf(buf, "%.2f", value_);
+		return std::string(buf);
+	}
 };
 
 class Segment; //Forward declaration for Location
