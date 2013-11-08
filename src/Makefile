@@ -2,12 +2,15 @@ CXXFLAGS = -Wall -g -std=c++0x
 
 OBJECTS = Instance.o Engine.o
 
-default:	test1 example
+default:	test1 example example2
 
 test1:	test1.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 example:	example.o $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+example2: example2.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:

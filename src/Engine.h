@@ -149,9 +149,7 @@ public:
 		Ptr m = new Location(_name, _locType);
   	return m;
 	}
-	
-	//~Location();
-	
+		
 	virtual void segmentAdd(Fwk::Ptr<Segment> _segment);
 	virtual void segmentRemove(Fwk::Ptr<Segment> _segment);
 	inline U32 segments() const { return segments_.size(); }
@@ -178,7 +176,7 @@ public:
 		Location::PtrConst notifier_;
 		NotifieeConst() {}
 	};
-	//PEO
+
 	class Notifiee : public virtual NotifieeConst /*, public virtual Fwk::PtrInterface<Notifiee> */ {
 	public:
 		typedef Fwk::Ptr<Notifiee const> PtrConst;
@@ -200,8 +198,7 @@ protected:
 	explicit Location(const std::string& _name, LocationType _locType);
 	LocationType locType_;
 	std::string name_;
-	std::list<Fwk::Ptr<Segment>> segments_; //PEO
-	//std::list<Segment*> segments_;
+	std::list<Fwk::Ptr<Segment>> segments_;
 
 	NotifieeConst *notifiee_;
   void newNotifiee( Location::NotifieeConst * n ) const {
@@ -315,7 +312,6 @@ public:
 		Ptr m = new Segment(_name, _segType);
     return m;
 	}
-	//~Segment();
 
 	inline Location::Ptr source() const { return source_; }
 	virtual void sourceIs(Location::Ptr _loc);
@@ -353,8 +349,7 @@ public:
 		NotifieeConst() {}
 	};
 	
-	//PEO
-	class Notifiee : public virtual NotifieeConst /*, public virtual Fwk::PtrInterface<Notifiee> */{
+	class Notifiee : public virtual NotifieeConst {
 	public:
 		typedef Fwk::Ptr<Notifiee const> PtrConst;
 		typedef Fwk::Ptr<Notifiee> Ptr;
@@ -376,8 +371,7 @@ protected:
 	std::string name_;
 	Location::Ptr source_;
 	Mile length_;
-	Segment::Ptr returnSegment_; //PEO
-	//Segment* returnSegment_;
+	Segment::Ptr returnSegment_;
 	Difficulty diff_;
 	Expedite expedite_;
 
@@ -402,11 +396,11 @@ public:
     return m;
 	}
 	
-	
 protected:
 	BoatSegment();
 
 };
+
 
 class PlaneSegment : public Segment {
 public:
@@ -417,11 +411,11 @@ public:
     return m;
 	}
 	
-	
 protected:	
 	PlaneSegment();
 
 };
+
 
 class TruckSegment : public Segment {
 public:
@@ -431,7 +425,6 @@ public:
 		Ptr m = new TruckSegment();
     return m;
 	}
-	
 
 protected:
 	TruckSegment();
@@ -479,7 +472,7 @@ protected:
 		owner_ = _owner;
 	}
 
-	Fwk::Ptr<Engine> owner_; //PEO
+	Fwk::Ptr<Engine> owner_;
 };
 
 class SegmentReactor : public Segment::Notifiee {
@@ -501,11 +494,9 @@ protected:
 		owner_ = _owner;
 	}
 
-	Fwk::Ptr<Engine> owner_;       //PEO
-	Location::Ptr prevSource_; //PEO
-	//Location* prevSource_;
-	Segment::Ptr prevReturn_; //PEO
-	//Segment* prevReturn_;
+	Fwk::Ptr<Engine> owner_;
+	Location::Ptr prevSource_;
+	Segment::Ptr prevReturn_;
 };
 
 class Path;
@@ -572,8 +563,7 @@ public:
 		NotifieeConst() {}
 	};
 	
-	//PEO
-	class Notifiee : public virtual NotifieeConst /*, public virtual Fwk::PtrInterface<Notifiee> */ {
+	class Notifiee : public virtual NotifieeConst {
 	public:
 		typedef Fwk::Ptr<Notifiee const> PtrConst;
 		typedef Fwk::Ptr<Notifiee> Ptr;
@@ -643,7 +633,6 @@ public:
   std::string toString();
 	
 protected:
-	// Path() {}  // needed for use in collections
 	Path(Engine::Ptr _engine, Location::Ptr _start, Segment::Expedite _expedite);
 	Path(Path::Ptr _path);
 	~Path() {}
@@ -687,7 +676,6 @@ public:
 	bool segmentAdd(Segment::Ptr _segment);
 
 protected:
-	// ConstrainedPath() {} // needed for use in collections
 	ConstrainedPath(Engine::Ptr _engine, Location::Ptr _start, Segment::Expedite _expedite,
 	  Cost _costConstraint, Mile _lengthConstraint, Time _timeConstraint);
 	ConstrainedPath(ConstrainedPath::Ptr _cpath);

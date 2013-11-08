@@ -19,7 +19,6 @@ Location::segmentAdd(Fwk::Ptr<Segment> _segment){
     if (s->name() == _segment->name()) return;
   }
   segments_.push_back(_segment);
-  // TODO: no need to notify notifiee here?
 }
 
 void
@@ -358,29 +357,19 @@ vector<ConstrainedPath::Ptr>
 Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
   Cost _maxCost, Mile _maxLength, Time _maxTime) {
 
-  // cout << "(constrainedGraph) _expedite: " << (int)_expedite << endl;
-  // cout << "(constrainedGraph) _maxCost: " << _maxCost.toString() << endl;
-  // cout << "(constrainedGraph) _maxLength: " << _maxLength.toString() << endl;
-  // cout << "(constrainedGraph) _maxTime: " << _maxTime.toString() << endl;
-
   vector<ConstrainedPath::Ptr> results;
   list<ConstrainedPath::Ptr> frontier;
 
   ConstrainedPath::Ptr emptyPath = 
     ConstrainedPath::ConstrainedPathNew(this, _start, _expedite, _maxCost, _maxLength, _maxTime);
 
-  // cout << "(constrainedGraph) emptyPath->path->expedite(): " << emptyPath->path()->expedite() << endl;
-
   for(U32 i = 0; i < _start->segments(); i++){
     Segment::Ptr seg = _start->segmentAtIndex(i);
-    // cout << "SEG LENGTH: " << seg->length().toString() << endl;
     ConstrainedPath::Ptr cp = ConstrainedPath::ConstrainedPathNew(emptyPath); // deep copy
-    // cout << "cp1: " << cp->path()->toString() << endl;
     if (cp->segmentAdd(seg)) frontier.push_back(cp);
   }
 
   for (ConstrainedPath::Ptr cp : frontier) {
-    // cout << "cp2: " << cp->path()->toString() << endl;
   }
 
   while (!frontier.empty()) {
@@ -399,15 +388,16 @@ Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
     }
   }
 
-  // for (ConstrainedPath::Ptr cp : results) {
-  //   cout << "CP: " << cp->path()->toString() 
-  //        << " (expedite=" << cp->path()->expedite()
-  //        << ", cost=" << cp->path()->cost().toString() 
-  //        << ", length=" << cp->path()->length().toString() 
-  //        << ", time=" << cp->path()->time().toString() 
-  //        << ")" << endl;
-  // }
-
+  /* FOR DEBUGGING */
+  /*
+  for (ConstrainedPath::Ptr cp : results) {
+    cout << "CP: " << cp->path()->toString() 
+         << " (expedite=" << cp->path()->expedite()
+         << ", cost=" << cp->path()->cost().toString() 
+         << ", length=" << cp->path()->length().toString() 
+         << ", time=" << cp->path()->time().toString() 
+         << ")" << endl;
+  } */
   return results; 
 }
 
@@ -422,48 +412,36 @@ Engine::connections(Location::Ptr start, Location::Ptr end){
 	
 	for(U32 i = 0; i < start->segments(); i++){
 		Segment::Ptr seg = start->segmentAtIndex(i);
-		// cout << "On segment: " << seg->name() << endl;
 		Path::Ptr currSlow = Path::PathNew(emptySlow);
 		Path::Ptr currFast = Path::PathNew(emptyFast);
 		bool slowValid = currSlow->segmentAdd(seg);
 		bool fastValid = currFast->segmentAdd(seg);
-		// cout << currSlow->cost().toString() << endl;
-		// cout << currSlow->time().toString() << endl;
 		if(slowValid){
 		 frontier.push_back(currSlow);
-		 // cout << "Enqueued slow segment: " << seg->name() << endl;
 		}
 		if(fastValid) {
 			frontier.push_back(currFast);
-			// cout << "Enqueued fast segment: " << seg->name() << endl;
 		}
 	}//end for loop
 	
-	// cout << "Entering while loop" << endl;
 	while( !frontier.empty() ) {
 		Path::Ptr curr = frontier.front();
 		frontier.pop_front();
 		Location::Ptr last = curr->lastNode();
-		// cout << "	Looking at node: " << last->name() << endl;
 		if(NULL == last) continue;
 		if(end == last){
-			// cout << "	FOUND END" << endl;
 			results.push_back(Path::PathNew(curr));
 			continue;
 		}
     if (last->locationType() == Location::customerLoc()) continue;
 
-		// cout << "		Looking at segments from " << last->name() << endl;
 		for(U32 i = 0; i < last->segments(); i++){
-			
 			Path::Ptr currSpawn = Path::PathNew(curr);
 			Segment::Ptr seg = last->segmentAtIndex(i);
 			string debug = (seg != NULL) ? seg->name() : string("NULL");
-			// cout << "			On segment: " << debug << endl;
 			bool valid = currSpawn->segmentAdd(seg);
 			if(valid){
 			 frontier.push_back(currSpawn);
-			 // cout << "			Enqueued segment: " << seg->name() << endl;
 			}
 		}// end for loop
 	}// end while loop
@@ -486,14 +464,7 @@ Engine::segmentCost(Segment::Ptr _seg, Segment::Expedite _expedite) {
     return Cost();
   } 
 
-
-  // cout << "(segmentCost) PATH EXPEDITE: " << _expedite << endl;
-  // cout << "(segmentCost) SEG EXPEDITE: " << _seg->expedite() << endl;
-
   Cost segmentCost = Cost( cost.value() * _seg->difficulty().value() * _seg->length().value() );
-  // cout << "(segmentCost) fleetCost: " << cost.toString() << endl;
-  // cout << "(segmentCost) segDifficulty: " << _seg->difficulty().toString() << endl;
-  // cout << "(segmentCost) segLength: " << _seg->length().toString() << endl;
   if (_expedite == Segment::supported()) {
     assert(_seg->expedite() == Segment::supported()); // MUST be true
     return Cost( segmentCost.value() * kExpeditedRateCost );
@@ -524,7 +495,6 @@ Engine::segmentTime(Segment::Ptr _seg, Segment::Expedite _expedite) {
   }
   return segmentTime;
 }
-
 
 
 /******************************************************************************
@@ -606,8 +576,6 @@ Path::Path(Path::Ptr _path) :
   length_(_path->length()),
   time_(_path->time()),
   expedite_(_path->expedite())
-  // segments_(_path->segments()),
-  // nodes_(_path->nodes())
 {
   for (Segment::Ptr seg : _path->segments()) segments_.push_back(seg);
   for (Location::Ptr node : _path->nodes()) nodes_.push_back(node);
@@ -632,8 +600,6 @@ Path::segmentAdd(Segment::Ptr _segment) {
   if ( (expedite_ == Segment::supported()) && 
        (_segment->expedite() == Segment::unsupported()) ) return false;
 
-  // cout << "(Path::segmentAdd) PATH EXPEDITE: " << expedite_ << endl;
-  // cout << "(Path::segmentAdd) SEG EXPEDITE: " << _segment->expedite() << endl;
   // update Path stats
   cost_ = Cost(cost_.value() + engine_->segmentCost(_segment, expedite_).value());
   time_ = Time(time_.value() + engine_->segmentTime(_segment, expedite_).value());
@@ -691,7 +657,6 @@ bool
 ConstrainedPath::segmentAdd(Segment::Ptr _segment) {
   // first check that adding the new segment does not violate the constraints
   // compute new ConstrainedPath stats
-
   if ( (path_->expedite() == Segment::supported()) && (_segment->expedite() == Segment::unsupported()) ) return false;
 
   Cost newCost = Cost(path_->cost().value() + path_->engine()->segmentCost(_segment, path_->expedite()).value());
