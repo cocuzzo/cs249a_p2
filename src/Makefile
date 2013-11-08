@@ -2,19 +2,19 @@ CXXFLAGS = -Wall -g -std=c++0x
 
 OBJECTS = Instance.o Engine.o
 
-default:	test1 example example2
+default: test1 example example2
 
-test1:	test1.o $(OBJECTS)
+test1: test1.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-example:	example.o $(OBJECTS)
+example: example.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 example2: example2.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:
-	rm -f test1 test1.o $(OBJECTS) *~
+	rm -f test1 test1.o example example.o example2 example2.o $(OBJECTS) *~
 	
 Engine.o: Engine.cpp Engine.h PtrInterface.h Ptr.h
 Instance.o: Instance.cpp Instance.h PtrInterface.h Ptr.h Engine.h
