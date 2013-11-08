@@ -94,14 +94,7 @@ void
 Segment::returnSegmentIs(Segment::Ptr _returnSegment){
 	if (returnSegment_ == _returnSegment) return;
 	if (_returnSegment != NULL){
-		if (segType_ != _returnSegment->segmentType()) {
-      if ( ((source_->locationType() != Location::portLoc()) &&
-            (source_->locationType() != Location::customerLoc())) ||
-           ((_returnSegment->source()->locationType() != Location::portLoc()) &&
-            (_returnSegment->source()->locationType() != Location::customerLoc())) ) {
-        return;
-      }
-    }
+		if (segType_ != _returnSegment->segmentType()) return;
 	}
   returnSegment_ = _returnSegment;
   if (notifiee_) try {
