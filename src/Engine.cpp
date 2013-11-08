@@ -358,7 +358,7 @@ vector<ConstrainedPath::Ptr>
 Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
   Cost _maxCost, Mile _maxLength, Time _maxTime) {
 
-  vector<ConstrainedPath::Ptr> paths;
+  vector<ConstrainedPath::Ptr> results;
   list<ConstrainedPath::Ptr> frontier;
 
   ConstrainedPath::Ptr emptyPath = 
@@ -373,7 +373,7 @@ Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
   while (!frontier.empty()) {
     ConstrainedPath::Ptr cp = frontier.front();
     frontier.pop_front();
-    paths.push_back(cp);  // add current path to the results set
+    results.push_back(cp);  // add current path to the results set
     Location::Ptr lastNode = cp->path()->lastNode();
 
     for(U32 i = 0; i < lastNode->segments(); i++){
@@ -383,7 +383,7 @@ Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
     }
   }
 
-  return paths; 
+  return results; 
 }
 
   
@@ -397,34 +397,54 @@ Engine::connections(Location::Ptr start, Location::Ptr end){
 	
 	for(U32 i = 0; i < start->segments(); i++){
 		Segment::Ptr seg = start->segmentAtIndex(i);
+		cout << "On segment: " << seg->name() << endl;
 		Path::Ptr currSlow = Path::PathNew(emptySlow);
 		Path::Ptr currFast = Path::PathNew(emptyFast);
 		bool slowValid = currSlow->segmentAdd(seg);
 		bool fastValid = currFast->segmentAdd(seg);
-		if(slowValid) frontier.push_back(currSlow);
-		if(fastValid) frontier.push_back(currFast);
+		cout << currSlow->cost().toString() << endl;
+		cout << currSlow->time().toString() << endl;
+		if(slowValid){
+		 frontier.push_back(currSlow);
+		 cout << "Enqueued slow segment: " << seg->name() << endl;
+		}
+		if(fastValid) {
+			frontier.push_back(currFast);
+			cout << "Enqueued fast segment: " << seg->name() << endl;
+		}
 	}//end for loop
+	
+	cout << "Entering while loop" << endl;
 	while( !frontier.empty() ) {
 		Path::Ptr curr = frontier.front();
 		frontier.pop_front();
 		Location::Ptr last = curr->lastNode();
+		cout << "	Looking at node: " << last->name() << endl;
 		if(NULL == last) continue;
 		if(end == last){
+			cout << "	FOUND END" << endl;
 			results.push_back(Path::PathNew(curr));
 			continue;
 		}
+		cout << "		Looking at segments from " << last->name() << endl;
 		for(U32 i = 0; i < last->segments(); i++){
+			
 			Path::Ptr currSpawn = Path::PathNew(curr);
-			Segment::Ptr seg = start->segmentAtIndex(i);
+			Segment::Ptr seg = last->segmentAtIndex(i);
+			string debug = (seg != NULL) ? seg->name() : string("NULL");
+			cout << "			On segment: " << debug << endl;
 			bool valid = currSpawn->segmentAdd(seg);
-			if(valid) frontier.push_back(currSpawn);
+			if(valid){
+			 frontier.push_back(currSpawn);
+			 cout << "			Enqueued segment: " << seg->name() << endl;
+			}
 		}// end for loop
 	}// end while loop
 	return results;
 }
 
 //----------| Protected Implementation |------------//
-#define EXPEDITED_RATE_COST 1.5
+static const double kExpeditedRateCost = 1.5;
 Cost
 Engine::segmentCost(Segment::Ptr _seg, Segment::Expedite _expedite) {
   Cost cost;
@@ -442,13 +462,13 @@ Engine::segmentCost(Segment::Ptr _seg, Segment::Expedite _expedite) {
   Cost segmentCost = Cost( cost.value() * _seg->difficulty().value() * _seg->length().value() );
   if (_expedite == Segment::supported()) {
     assert(_seg->expedite() == Segment::supported()); // MUST be true
-    return Cost( segmentCost.value() * EXPEDITED_RATE_COST );
+    return Cost( segmentCost.value() * kExpeditedRateCost );
   } else {
     return segmentCost;
   }  
 }
 
-#define EXPEDITED_RATE_TIME 1.3
+static const double kExpeditedRateTime = 1.3;
 Time
 Engine::segmentTime(Segment::Ptr _seg, Segment::Expedite _expedite) {
   Speed speed;
@@ -466,7 +486,7 @@ Engine::segmentTime(Segment::Ptr _seg, Segment::Expedite _expedite) {
   Time segmentTime = Time( _seg->length().value() / speed.value() );
   if (_expedite == Segment::supported()) {
     assert(_seg->expedite() == Segment::supported()); // MUST be true
-    segmentTime = Time( segmentTime.value() / EXPEDITED_RATE_TIME );
+    segmentTime = Time( segmentTime.value() / kExpeditedRateTime );
   }
   return segmentTime;
 }
@@ -589,14 +609,10 @@ Path::toString(){
 	unsigned int numSegments = segments_.size();
 	for(unsigned int i = 0; i < numSegments; i++){
 		Segment::Ptr seg = segments_[i];
-		if(i != (numSegments - 1)){
-			ss << seg->source()->name() << "(" << seg->name() << ":"
-				 << seg->length().toString() << ":"
-				 << seg->returnSegment()->name() << ") ";
-		}
-		else{
-			ss << seg->source()->name();
-		}
+		ss << seg->source()->name() << "(" << seg->name() << ":"
+			<< seg->length().toString() << ":"
+			<< seg->returnSegment()->name() << ") ";
+		if(i == numSegments - 1) ss << seg->returnSegment()->source()->name();
 	}
 	return ss.str();
 }

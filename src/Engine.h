@@ -75,7 +75,7 @@ public:
 
 class Cost : public Ordinal<Cost, double> {
 public:
-	Cost(double num = 0.0) : Ordinal<Cost, double>(num) {
+	Cost(double num = 1.0) : Ordinal<Cost, double>(num) {
 		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Cost value error: " << num;

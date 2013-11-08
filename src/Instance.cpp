@@ -262,7 +262,7 @@ private:
 	void tokenizeLine(vector<string>& tokens, const string& str);
 	void parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& time, string& exp);
 	string stringifyConnect(vector<Path::Ptr>& paths);
-	string stringifyExplore(vector<Path::Ptr>& paths);
+	string stringifyExplore(vector<ConstrainedPath::Ptr>& paths);
 };
 
 class FleetRep : public Instance {
@@ -729,7 +729,7 @@ string ConnRep::attribute(const string& name){
 		string param;
 		if(name.substr(0, exploreStrlen) == exploreStr){
 			cout << "In explore if statement" << endl;
-			/*
+			
 			param = name.substr(exploreStrlen + 1);
 			int colon = param.find(':');
 			string locStr = param.substr(0, colon - 1);
@@ -738,17 +738,17 @@ string ConnRep::attribute(const string& name){
 			tokenizeLine(tokens, attr);
 			
 			Location::Ptr loc = eng->location(locStr);
-			Mile maxDist == Mile::Max(); Cost maxCost = Cost::Max(); Time maxTime = Time::Max(); string exp = "no";
+			//set default max values so parseAttr can update them
+			Mile maxDist = Mile::Max(); Cost maxCost = Cost::Max(); Time maxTime = Time::Max(); string exp = "no";
 			parseAttr(tokens, maxDist, maxCost, maxTime, exp);
 			cout << loc->name() << endl;
 			cout << maxDist.toString() << endl;
 			cout << maxCost.toString() << endl;
 			cout << maxTime.toString() << endl;
 			cout << exp << endl;
-			Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
-			vector<Path::Ptr> paths = eng->constrainedGraph(loc, maxDist, maxCost, maxTime, expedited);
-			response = stringifyExplore(paths);
-			*/
+			//Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
+			//vector<ConstrainedPath::Ptr> conPaths = eng->constrainedGraph(loc, expedited, maxCost, maxDist, maxTime);
+			//response = stringifyExplore(conPaths);
 		}
 		else if(name.substr(0, connectStrlen) == connectStr){
 			cout << "In connect if statement" << endl;
@@ -823,11 +823,11 @@ string ConnRep::stringifyConnect(vector<Path::Ptr>& paths){
 	return ss.str();
 }
 
-string ConnRep::stringifyExplore(vector<Path::Ptr>& paths){
+string ConnRep::stringifyExplore(vector<ConstrainedPath::Ptr>& paths){
 	ostringstream ss;
 	for(unsigned int i = 0; i < paths.size(); i++){
-		Path::Ptr p = paths[i];
-		ss << p->toString() << "\n";
+		ConstrainedPath::Ptr p = paths[i];
+		ss << p->path()->toString() << "\n";
 	}
 	return ss.str();
 }
