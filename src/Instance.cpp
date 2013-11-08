@@ -722,13 +722,13 @@ void ConnRep::tokenizeLine(vector<string>& tokens, const string& str){
 }
 
 string ConnRep::attribute(const string& name){
-	cout << "In ConnRep:attribute" << endl << endl;
+	// cout << "In ConnRep:attribute" << endl << endl;
 	string response;
 	try{
 		Engine::Ptr eng = manager_->engine();
 		string param;
 		if(name.substr(0, exploreStrlen) == exploreStr){
-			cout << "In explore if statement" << endl;
+			// cout << "In explore if statement" << endl;
 			
 			param = name.substr(exploreStrlen + 1);
 			int colon = param.find(':');
@@ -741,27 +741,27 @@ string ConnRep::attribute(const string& name){
 			//set default max values so parseAttr can update them
 			Mile maxDist = Mile::Max(); Cost maxCost = Cost::Max(); Time maxTime = Time::Max(); string exp = "no";
 			parseAttr(tokens, maxDist, maxCost, maxTime, exp);
-			cout << loc->name() << endl;
-			cout << maxDist.toString() << endl;
-			cout << maxCost.toString() << endl;
-			cout << maxTime.toString() << endl;
-			cout << exp << endl;
-			//Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
-			//vector<ConstrainedPath::Ptr> conPaths = eng->constrainedGraph(loc, expedited, maxCost, maxDist, maxTime);
-			//response = stringifyExplore(conPaths);
+			// cout << loc->name() << endl;
+			// cout << maxDist.toString() << endl;
+			// cout << maxCost.toString() << endl;
+			// cout << maxTime.toString() << endl;
+			// cout << exp << endl;
+			Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
+			vector<ConstrainedPath::Ptr> conPaths = eng->constrainedGraph(loc, expedited, maxCost, maxDist, maxTime);
+			response = stringifyExplore(conPaths);
 		}
 		else if(name.substr(0, connectStrlen) == connectStr){
-			cout << "In connect if statement" << endl;
+			// cout << "In connect if statement" << endl;
 			param = name.substr(connectStrlen + 1);
 			int colon = param.find(':');
 			string startStr = param.substr(0, colon - 1);
-			cout << startStr << endl;
+			// cout << startStr << endl;
 			string endStr = param.substr(colon + 2);
-			cout << endStr << endl;
+			// cout << endStr << endl;
 			Location::Ptr start = eng->location(startStr);
 			Location::Ptr end = eng->location(endStr);
 			vector<Path::Ptr> paths = eng->connections(start, end);
-			cout << paths.size() << endl;
+			// cout << paths.size() << endl;
 			response = stringifyConnect(paths);
 		}
 		else{

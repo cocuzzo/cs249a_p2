@@ -94,7 +94,14 @@ void
 Segment::returnSegmentIs(Segment::Ptr _returnSegment){
 	if (returnSegment_ == _returnSegment) return;
 	if (_returnSegment != NULL){
-		if (segType_ != _returnSegment->segmentType()) return;
+		if (segType_ != _returnSegment->segmentType()) {
+      if ( ((source_->locationType() != Location::portLoc()) &&
+            (source_->locationType() != Location::customerLoc())) ||
+           ((_returnSegment->source()->locationType() != Location::portLoc()) &&
+            (_returnSegment->source()->locationType() != Location::customerLoc())) ) {
+        return;
+      }
+    }
 	}
   returnSegment_ = _returnSegment;
   if (notifiee_) try {
@@ -358,16 +365,29 @@ vector<ConstrainedPath::Ptr>
 Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
   Cost _maxCost, Mile _maxLength, Time _maxTime) {
 
+  // cout << "(constrainedGraph) _expedite: " << (int)_expedite << endl;
+  // cout << "(constrainedGraph) _maxCost: " << _maxCost.toString() << endl;
+  // cout << "(constrainedGraph) _maxLength: " << _maxLength.toString() << endl;
+  // cout << "(constrainedGraph) _maxTime: " << _maxTime.toString() << endl;
+
   vector<ConstrainedPath::Ptr> results;
   list<ConstrainedPath::Ptr> frontier;
 
   ConstrainedPath::Ptr emptyPath = 
     ConstrainedPath::ConstrainedPathNew(this, _start, _expedite, _maxCost, _maxLength, _maxTime);
 
+  // cout << "(constrainedGraph) emptyPath->path->expedite(): " << emptyPath->path()->expedite() << endl;
+
   for(U32 i = 0; i < _start->segments(); i++){
     Segment::Ptr seg = _start->segmentAtIndex(i);
+    // cout << "SEG LENGTH: " << seg->length().toString() << endl;
     ConstrainedPath::Ptr cp = ConstrainedPath::ConstrainedPathNew(emptyPath); // deep copy
+    // cout << "cp1: " << cp->path()->toString() << endl;
     if (cp->segmentAdd(seg)) frontier.push_back(cp);
+  }
+
+  for (ConstrainedPath::Ptr cp : frontier) {
+    // cout << "cp2: " << cp->path()->toString() << endl;
   }
 
   while (!frontier.empty()) {
@@ -381,6 +401,15 @@ Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
       ConstrainedPath::Ptr cpc = ConstrainedPath::ConstrainedPathNew(cp);
       if (cpc->segmentAdd(seg)) frontier.push_back(cpc);
     }
+  }
+
+  for (ConstrainedPath::Ptr cp : results) {
+    cout << "CP: " << cp->path()->toString() 
+         << " (expedite=" << cp->path()->expedite()
+         << ", cost=" << cp->path()->cost().toString() 
+         << ", length=" << cp->path()->length().toString() 
+         << ", time=" << cp->path()->time().toString() 
+         << ")" << endl;
   }
 
   return results; 
@@ -397,46 +426,46 @@ Engine::connections(Location::Ptr start, Location::Ptr end){
 	
 	for(U32 i = 0; i < start->segments(); i++){
 		Segment::Ptr seg = start->segmentAtIndex(i);
-		cout << "On segment: " << seg->name() << endl;
+		// cout << "On segment: " << seg->name() << endl;
 		Path::Ptr currSlow = Path::PathNew(emptySlow);
 		Path::Ptr currFast = Path::PathNew(emptyFast);
 		bool slowValid = currSlow->segmentAdd(seg);
 		bool fastValid = currFast->segmentAdd(seg);
-		cout << currSlow->cost().toString() << endl;
-		cout << currSlow->time().toString() << endl;
+		// cout << currSlow->cost().toString() << endl;
+		// cout << currSlow->time().toString() << endl;
 		if(slowValid){
 		 frontier.push_back(currSlow);
-		 cout << "Enqueued slow segment: " << seg->name() << endl;
+		 // cout << "Enqueued slow segment: " << seg->name() << endl;
 		}
 		if(fastValid) {
 			frontier.push_back(currFast);
-			cout << "Enqueued fast segment: " << seg->name() << endl;
+			// cout << "Enqueued fast segment: " << seg->name() << endl;
 		}
 	}//end for loop
 	
-	cout << "Entering while loop" << endl;
+	// cout << "Entering while loop" << endl;
 	while( !frontier.empty() ) {
 		Path::Ptr curr = frontier.front();
 		frontier.pop_front();
 		Location::Ptr last = curr->lastNode();
-		cout << "	Looking at node: " << last->name() << endl;
+		// cout << "	Looking at node: " << last->name() << endl;
 		if(NULL == last) continue;
 		if(end == last){
-			cout << "	FOUND END" << endl;
+			// cout << "	FOUND END" << endl;
 			results.push_back(Path::PathNew(curr));
 			continue;
 		}
-		cout << "		Looking at segments from " << last->name() << endl;
+		// cout << "		Looking at segments from " << last->name() << endl;
 		for(U32 i = 0; i < last->segments(); i++){
 			
 			Path::Ptr currSpawn = Path::PathNew(curr);
 			Segment::Ptr seg = last->segmentAtIndex(i);
 			string debug = (seg != NULL) ? seg->name() : string("NULL");
-			cout << "			On segment: " << debug << endl;
+			// cout << "			On segment: " << debug << endl;
 			bool valid = currSpawn->segmentAdd(seg);
 			if(valid){
 			 frontier.push_back(currSpawn);
-			 cout << "			Enqueued segment: " << seg->name() << endl;
+			 // cout << "			Enqueued segment: " << seg->name() << endl;
 			}
 		}// end for loop
 	}// end while loop
@@ -459,7 +488,14 @@ Engine::segmentCost(Segment::Ptr _seg, Segment::Expedite _expedite) {
     return Cost();
   } 
 
+
+  // cout << "(segmentCost) PATH EXPEDITE: " << _expedite << endl;
+  // cout << "(segmentCost) SEG EXPEDITE: " << _seg->expedite() << endl;
+
   Cost segmentCost = Cost( cost.value() * _seg->difficulty().value() * _seg->length().value() );
+  // cout << "(segmentCost) fleetCost: " << cost.toString() << endl;
+  // cout << "(segmentCost) segDifficulty: " << _seg->difficulty().toString() << endl;
+  // cout << "(segmentCost) segLength: " << _seg->length().toString() << endl;
   if (_expedite == Segment::supported()) {
     assert(_seg->expedite() == Segment::supported()); // MUST be true
     return Cost( segmentCost.value() * kExpeditedRateCost );
@@ -569,10 +605,13 @@ Path::Path(Path::Ptr _path) :
   cost_(_path->cost()),
   length_(_path->length()),
   time_(_path->time()),
-  expedite_(_path->expedite()),
-  segments_(_path->segments()),
-  nodes_(_path->nodes())
-{}
+  expedite_(_path->expedite())
+  // segments_(_path->segments()),
+  // nodes_(_path->nodes())
+{
+  for (Segment::Ptr seg : _path->segments()) segments_.push_back(seg);
+  for (Location::Ptr node : _path->nodes()) nodes_.push_back(node);
+}
 
 bool
 Path::segmentAdd(Segment::Ptr _segment) {
@@ -593,6 +632,8 @@ Path::segmentAdd(Segment::Ptr _segment) {
   if ( (expedite_ == Segment::supported()) && 
        (_segment->expedite() == Segment::unsupported()) ) return false;
 
+  // cout << "(Path::segmentAdd) PATH EXPEDITE: " << expedite_ << endl;
+  // cout << "(Path::segmentAdd) SEG EXPEDITE: " << _segment->expedite() << endl;
   // update Path stats
   cost_ = Cost(cost_.value() + engine_->segmentCost(_segment, expedite_).value());
   time_ = Time(time_.value() + engine_->segmentTime(_segment, expedite_).value());
@@ -629,8 +670,8 @@ Path::containsNode(Location::Ptr _node) {
 ** ConstrainedPath Impl
 ******************************************************************************/
 ConstrainedPath::ConstrainedPath(Engine::Ptr _engine, Location::Ptr _start,
-    Segment::Expedite _expedite, Cost _costConstraint, 
-    Mile _lengthConstraint, Time _timeConstraint) :
+  Segment::Expedite _expedite, Cost _costConstraint, 
+  Mile _lengthConstraint, Time _timeConstraint) :
   costConstraint_(_costConstraint),
   lengthConstraint_(_lengthConstraint),
   timeConstraint_(_timeConstraint) 
@@ -639,24 +680,30 @@ ConstrainedPath::ConstrainedPath(Engine::Ptr _engine, Location::Ptr _start,
 }
 
 ConstrainedPath::ConstrainedPath(ConstrainedPath::Ptr _cpath) :
-  path_(_cpath->path()),
+  // path_(_cpath->path()),
   costConstraint_(_cpath->costConstraint()),
   lengthConstraint_(_cpath->lengthConstraint()),
   timeConstraint_(_cpath->timeConstraint()) 
-{}
+{
+  path_ = Path::PathNew(_cpath->path());
+}
 
 bool
 ConstrainedPath::segmentAdd(Segment::Ptr _segment) {
   // first check that adding the new segment does not violate the constraints
   // compute new ConstrainedPath stats
+
+  if ( (path_->expedite() == Segment::supported()) && (_segment->expedite() == Segment::unsupported()) ) return false;
+
   Cost newCost = Cost(path_->cost().value() + path_->engine()->segmentCost(_segment, path_->expedite()).value());
   Time newTime = Time(path_->time().value() + path_->engine()->segmentTime(_segment, path_->expedite()).value());
   Mile newLength = Mile(path_->length().value() + _segment->length().value());
 
   // check if any constraints are violated
-  if ( (costConstraint_ != Cost::Max()) && (newCost > costConstraint_) ) return false;
-  if ( (lengthConstraint_ != Mile::Max()) && (newLength > lengthConstraint_) ) return false;
-  if ( (timeConstraint_ != Time::Max()) && (newTime > timeConstraint_) ) return false;
+  if ( (path_->expedite() == Segment::supported()) && (_segment->expedite() == Segment::unsupported()) ) return false;
+  if ( (costConstraint_ < Cost::Max()) && (newCost > costConstraint_) ) return false;
+  if ( (lengthConstraint_ < Mile::Max()) && (newLength > lengthConstraint_) ) return false;
+  if ( (timeConstraint_ < Time::Max()) && (newTime > timeConstraint_) ) return false;
 
   // now let the Path class determine if this Segment can be added
   return path_->segmentAdd(_segment);

@@ -34,7 +34,7 @@ public:
 	}
 	std::string toString() { 
 		char buf[MAX_BUF];
-		std::sprintf(buf, "%.2f", value_);
+		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
 		return std::string(buf);
 	}
 	static Mile Max() { return Mile(MAX_MILE);	}
@@ -51,15 +51,15 @@ public:
 	}
 	std::string toString() { 
 		char buf[MAX_BUF];
-		std::sprintf(buf, "%.2f", value_);
+		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
 		return std::string(buf);
 	}
 };
 
 class Speed : public Ordinal<Speed, double> {
 public:
-	Speed(double num = 0.0) : Ordinal<Speed, double>(num) {
-		if (num < 0.0) {
+	Speed(double num = 1.0) : Ordinal<Speed, double>(num) {
+		if (num <= 0.0) {
 			std::ostringstream err;
 			err << "Speed value error: " << num;
 			throw err.str();
@@ -67,7 +67,7 @@ public:
 	}
 	std::string toString() { 
 		char buf[MAX_BUF];
-		std::sprintf(buf, "%.2f", value_);
+		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
 		return std::string(buf);
 	}
 	static Speed Max() { return Speed(MAX_SPEED);	}
@@ -75,7 +75,7 @@ public:
 
 class Cost : public Ordinal<Cost, double> {
 public:
-	Cost(double num = 1.0) : Ordinal<Cost, double>(num) {
+	Cost(double num = 0.0) : Ordinal<Cost, double>(num) {
 		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Cost value error: " << num;
@@ -83,8 +83,8 @@ public:
 		}
 	}
 	std::string toString() { 
-		char buf[MAX_BUF];
-		std::sprintf(buf, "%.2f", value_);
+		char buf[MAX_BUF] = {0};
+		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
 		return std::string(buf);
 	}
 	static Cost Max() { return Cost(MAX_COST);	}
@@ -113,7 +113,7 @@ public:
 	}
 	std::string toString() { 
 		char buf[MAX_BUF];
-		std::sprintf(buf, "%.2f", value_);
+		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
 		return std::string(buf);
 	}
 	static Time Max() { return Time(MAX_TIME);	}
