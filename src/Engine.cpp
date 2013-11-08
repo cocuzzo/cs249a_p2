@@ -361,33 +361,41 @@ Engine::constrainedGraph(Location::Ptr loc, Mile distance,
   return paths; 
 }
 
-vector<Path::Ptr>
+  
+vector<Path::Ptr> 
 Engine::connections(Location::Ptr start, Location::Ptr end){
-  
-  vector<Path::Ptr> foundPaths;
-  vector<Path::Ptr> frontier;
-
-  Path::Ptr curPath;
-  // for (U32 i = 0; i < start.segments(); i++) {
-  //   Segment::Ptr testSeg = start.segmentAtIndex(i);
-  //   Segment::Ptr testReturn = testSeg.returnSegment();
-  //   if (testReturn) {
-  //     Location::Ptr testNode = testReturn.source();
-  //     if (testNode) {
-  //       if (testNode) {
-  //         if (testNode == end) {
-  //           Path::Ptr testPath = Path(curPath);
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
-  while ( !frontier.empty() ) {
-
-  }
-  
-  return foundPaths; 
+	
+	vector<Path::Ptr> results;
+	list<Path::Ptr> frontier;
+	Path::Ptr emptySlow = Path::PathNew(this, start, Segment::unsupported() );
+	Path::Ptr emptyFast = Path::PathNew(this, start, Segment::supported() );
+	
+	for(U32 i = 0; i < start->segments(); i++){
+		Segment::Ptr seg = start->segmentAtIndex(i);
+		Path::Ptr currSlow = Path::PathNew(emptySlow);
+		Path::Ptr currFast = Path::PathNew(emptyFast);
+		bool slowValid = currSlow->segmentAdd(seg);
+		bool fastValid = currFast->segmentAdd(seg);
+		if(slowValid) frontier.push_back(currSlow);
+		if(fastValid) frontier.push_back(currFast);
+	}
+	while( !frontier.empty() ) {
+		Path::Ptr curr = frontier.front();
+		frontier.pop_front();
+		Location::Ptr last = curr->lastNode();
+		if(NULL == last) continue;
+		if(end == last){
+			results.push_back(Path::PathNew(curr));
+			continue;
+		}
+		for(U32 i = 0; i < last->segments(); i++){
+			Path::Ptr currSpawn = Path::PathNew(curr);
+			Segment::Ptr seg = start->segmentAtIndex(i);
+			bool valid = currSpawn->segmentAdd(seg);
+			if(valid) frontier.push_back(currSpawn);
+		}// end for loop
+	}// end while loop
+	return results;
 }
 
 //----------| Protected Implementation |------------//
