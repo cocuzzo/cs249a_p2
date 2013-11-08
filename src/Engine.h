@@ -3,6 +3,7 @@
 
 #include <string>
 #include <sstream>
+#include <cfloat>
 #include <vector>
 #include <map>
 #include <list>
@@ -16,12 +17,16 @@
 namespace Shipping {
 
 #define MAX_BUF 64
+#define MAX_COST DBL_MAX
+#define MAX_MILE DBL_MAX
+#define MAX_SPEED DBL_MAX
+#define MAX_TIME DBL_MAX
 
 // ordinal types
 class Mile : public Ordinal<Mile, double> {
 public:
 	Mile(double num = 0.0) : Ordinal<Mile, double>(num) {
-		if (num < 0) {
+		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Mile value error: " << num;
 			throw err.str();
@@ -32,6 +37,7 @@ public:
 		std::sprintf(buf, "%.2f", value_);
 		return std::string(buf);
 	}
+	static Mile Max() { return Mile(MAX_MILE);	}
 };
 
 class Difficulty : public Ordinal<Difficulty, double> {
@@ -53,7 +59,7 @@ public:
 class Speed : public Ordinal<Speed, double> {
 public:
 	Speed(double num = 0.0) : Ordinal<Speed, double>(num) {
-		if (num < 0) {
+		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Speed value error: " << num;
 			throw err.str();
@@ -64,12 +70,13 @@ public:
 		std::sprintf(buf, "%.2f", value_);
 		return std::string(buf);
 	}
+	static Speed Max() { return Speed(MAX_SPEED);	}
 };
 
 class Cost : public Ordinal<Cost, double> {
 public:
 	Cost(double num = 0.0) : Ordinal<Cost, double>(num) {
-		if (num < 0) {
+		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Cost value error: " << num;
 			throw err.str();
@@ -80,6 +87,7 @@ public:
 		std::sprintf(buf, "%.2f", value_);
 		return std::string(buf);
 	}
+	static Cost Max() { return Cost(MAX_COST);	}
 };
 
 class Capacity : public Ordinal<Capacity, int> {
@@ -97,7 +105,7 @@ public:
 class Time : public Ordinal<Time, double> {
 public:
 	Time(double num = 0.0) : Ordinal<Time, double>(num) {
-		if (num < 0) {
+		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Time value error: " << num;
 			throw err.str();
@@ -108,6 +116,7 @@ public:
 		std::sprintf(buf, "%.2f", value_);
 		return std::string(buf);
 	}
+	static Time Max() { return Time(MAX_TIME);	}
 };
 
 class Segment; //Forward declaration for Location
@@ -535,7 +544,8 @@ public:
 	void handleSegmentExpedite( Segment::Ptr seg );
 
 	// Graph query methods
-	std::vector<Fwk::Ptr<ConstrainedPath>> constrainedGraph(Location::Ptr loc, Mile distance, Cost cost, Time time, Segment::Expedite expedite);
+	std::vector<Fwk::Ptr<ConstrainedPath>> constrainedGraph(Location::Ptr _start, 
+		Segment::Expedite _expedite, Cost _maxCost, Mile _maxLength, Time maxTime);
 	std::vector<Fwk::Ptr<Path>> connections(Location::Ptr start, Location::Ptr end);
 
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
@@ -679,7 +689,7 @@ public:
 protected:
 	// ConstrainedPath() {} // needed for use in collections
 	ConstrainedPath(Engine::Ptr _engine, Location::Ptr _start, Segment::Expedite _expedite,
-	 Cost _costConstraint, Mile _lengthConstraint, Time _timeConstraint);
+	  Cost _costConstraint, Mile _lengthConstraint, Time _timeConstraint);
 	ConstrainedPath(ConstrainedPath::Ptr _cpath);
 
 	Path::Ptr path_;

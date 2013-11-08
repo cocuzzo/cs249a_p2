@@ -355,9 +355,34 @@ Note that, as a floating-point value, the lengths should be printed to 2 decimal
 */
 
 vector<ConstrainedPath::Ptr>
-Engine::constrainedGraph(Location::Ptr loc, Mile distance, 
-                       Cost cost, Time time, Segment::Expedite expedite) {
-  vector<ConstrainedPath::Ptr> paths;  
+Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
+  Cost _maxCost, Mile _maxLength, Time _maxTime) {
+
+  vector<ConstrainedPath::Ptr> paths;
+  list<ConstrainedPath::Ptr> frontier;
+
+  ConstrainedPath::Ptr emptyPath = 
+    ConstrainedPath::ConstrainedPathNew(this, _start, _expedite, _maxCost, _maxLength, _maxTime);
+
+  for(U32 i = 0; i < _start->segments(); i++){
+    Segment::Ptr seg = _start->segmentAtIndex(i);
+    ConstrainedPath::Ptr cp = ConstrainedPath::ConstrainedPathNew(emptyPath); // deep copy
+    if (cp->segmentAdd(seg)) frontier.push_back(cp);
+  }
+
+  while (!frontier.empty()) {
+    ConstrainedPath::Ptr cp = frontier.front();
+    frontier.pop_front();
+    paths.push_back(cp);  // add current path to the results set
+    Location::Ptr lastNode = cp->path()->lastNode();
+
+    for(U32 i = 0; i < lastNode->segments(); i++){
+      Segment::Ptr seg = lastNode->segmentAtIndex(i);
+      ConstrainedPath::Ptr cpc = ConstrainedPath::ConstrainedPathNew(cp);
+      if (cpc->segmentAdd(seg)) frontier.push_back(cpc);
+    }
+  }
+
   return paths; 
 }
 
@@ -613,9 +638,9 @@ ConstrainedPath::segmentAdd(Segment::Ptr _segment) {
   Mile newLength = Mile(path_->length().value() + _segment->length().value());
 
   // check if any constraints are violated
-  if ( (newCost > costConstraint_) || (newLength > lengthConstraint_) || (newTime > timeConstraint_) ) {
-    return false;
-  }
+  if ( (costConstraint_ != Cost::Max()) && (newCost > costConstraint_) ) return false;
+  if ( (lengthConstraint_ != Mile::Max()) && (newLength > lengthConstraint_) ) return false;
+  if ( (timeConstraint_ != Time::Max()) && (newTime > timeConstraint_) ) return false;
 
   // now let the Path class determine if this Segment can be added
   return path_->segmentAdd(_segment);
