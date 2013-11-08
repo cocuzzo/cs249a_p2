@@ -389,6 +389,9 @@ Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
     results.push_back(cp);  // add current path to the results set
     Location::Ptr lastNode = cp->path()->lastNode();
 
+    // if the last node is a customer location, stop exploring along this path
+    if ( lastNode->locationType() == Location::customerLoc() ) continue;
+
     for(U32 i = 0; i < lastNode->segments(); i++){
       Segment::Ptr seg = lastNode->segmentAtIndex(i);
       ConstrainedPath::Ptr cpc = ConstrainedPath::ConstrainedPathNew(cp);
@@ -396,14 +399,14 @@ Engine::constrainedGraph(Location::Ptr _start, Segment::Expedite _expedite,
     }
   }
 
-  for (ConstrainedPath::Ptr cp : results) {
-    cout << "CP: " << cp->path()->toString() 
-         << " (expedite=" << cp->path()->expedite()
-         << ", cost=" << cp->path()->cost().toString() 
-         << ", length=" << cp->path()->length().toString() 
-         << ", time=" << cp->path()->time().toString() 
-         << ")" << endl;
-  }
+  // for (ConstrainedPath::Ptr cp : results) {
+  //   cout << "CP: " << cp->path()->toString() 
+  //        << " (expedite=" << cp->path()->expedite()
+  //        << ", cost=" << cp->path()->cost().toString() 
+  //        << ", length=" << cp->path()->length().toString() 
+  //        << ", time=" << cp->path()->time().toString() 
+  //        << ")" << endl;
+  // }
 
   return results; 
 }
@@ -448,6 +451,8 @@ Engine::connections(Location::Ptr start, Location::Ptr end){
 			results.push_back(Path::PathNew(curr));
 			continue;
 		}
+    if (last->locationType() == Location::customerLoc()) continue;
+
 		// cout << "		Looking at segments from " << last->name() << endl;
 		for(U32 i = 0; i < last->segments(); i++){
 			
@@ -549,6 +554,7 @@ Stats::onLocationDel( Location::Ptr loc ){
     else if (loc->locationType() == Location::truckTerminalLoc()) truckTerminals_--;
     else cerr << "undefined location type in Stats::onLocationDel" << endl;
   }
+
 }
 
 void
@@ -568,6 +574,7 @@ Stats::onSegmentDel( Segment::Ptr seg ){
     else if (seg->segmentType() == Segment::planeSeg()) planeSegments_--;
     else if (seg->segmentType() == Segment::truckSeg()) truckSegments_--;
     else cerr << "undefined segment type in Stats::onSegmentDel" << endl;
+    if (seg->expedite() == Segment::supported()) expediteSegments_--;
   }
 }
 
@@ -673,7 +680,6 @@ ConstrainedPath::ConstrainedPath(Engine::Ptr _engine, Location::Ptr _start,
 }
 
 ConstrainedPath::ConstrainedPath(ConstrainedPath::Ptr _cpath) :
-  // path_(_cpath->path()),
   costConstraint_(_cpath->costConstraint()),
   lengthConstraint_(_cpath->lengthConstraint()),
   timeConstraint_(_cpath->timeConstraint()) 
