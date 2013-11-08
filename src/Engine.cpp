@@ -403,7 +403,7 @@ Engine::connections(Location::Ptr start, Location::Ptr end){
 		bool fastValid = currFast->segmentAdd(seg);
 		if(slowValid) frontier.push_back(currSlow);
 		if(fastValid) frontier.push_back(currFast);
-	}
+	}//end for loop
 	while( !frontier.empty() ) {
 		Path::Ptr curr = frontier.front();
 		frontier.pop_front();

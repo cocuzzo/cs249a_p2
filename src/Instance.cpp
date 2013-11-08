@@ -547,7 +547,7 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 			seg_->sourceIs(source);
 		}
 		else if("length" == name){
-			Mile length( atoi(v.c_str()) );
+			Mile length( atof(v.c_str()) );
 			seg_->lengthIs(length);
 		}
 		else if("return segment" == name){
@@ -722,12 +722,14 @@ void ConnRep::tokenizeLine(vector<string>& tokens, const string& str){
 }
 
 string ConnRep::attribute(const string& name){
+	cout << "In ConnRep:attribute" << endl << endl;
 	string response;
 	try{
 		Engine::Ptr eng = manager_->engine();
 		string param;
 		if(name.substr(0, exploreStrlen) == exploreStr){
-			//cout << conn->attribute("explore customer1 : distance 1500") << endl
+			cout << "In explore if statement" << endl;
+			/*
 			param = name.substr(exploreStrlen + 1);
 			int colon = param.find(':');
 			string locStr = param.substr(0, colon - 1);
@@ -736,24 +738,31 @@ string ConnRep::attribute(const string& name){
 			tokenizeLine(tokens, attr);
 			
 			Location::Ptr loc = eng->location(locStr);
-			Mile maxDist; Cost maxCost; Time maxTime; string exp = "no";
+			Mile maxDist == Mile::Max(); Cost maxCost = Cost::Max(); Time maxTime = Time::Max(); string exp = "no";
 			parseAttr(tokens, maxDist, maxCost, maxTime, exp);
-			//Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
-			//vector<Path::Ptr> paths = eng->constrainedGraph(loc, maxDist, maxCost, maxTime, expedited);
-			//stringify paths
-			//response = 
+			cout << loc->name() << endl;
+			cout << maxDist.toString() << endl;
+			cout << maxCost.toString() << endl;
+			cout << maxTime.toString() << endl;
+			cout << exp << endl;
+			Segment::Expedite expedited = (exp == "yes") ? Segment::supported() : Segment::unsupported();
+			vector<Path::Ptr> paths = eng->constrainedGraph(loc, maxDist, maxCost, maxTime, expedited);
+			response = stringifyExplore(paths);
+			*/
 		}
 		else if(name.substr(0, connectStrlen) == connectStr){
-			//cout << conn->attribute("connect customer2 : customer1") << endl;
-			param = name.substr(exploreStrlen + 1);
+			cout << "In connect if statement" << endl;
+			param = name.substr(connectStrlen + 1);
 			int colon = param.find(':');
 			string startStr = param.substr(0, colon - 1);
+			cout << startStr << endl;
 			string endStr = param.substr(colon + 2);
+			cout << endStr << endl;
 			Location::Ptr start = eng->location(startStr);
 			Location::Ptr end = eng->location(endStr);
-			//vector<Path::Ptr> paths = eng->connections(start, end);
-			//stringify paths
-			//response = 
+			vector<Path::Ptr> paths = eng->connections(start, end);
+			cout << paths.size() << endl;
+			response = stringifyConnect(paths);
 		}
 		else{
 			throw string("Error: Invalid attribute => " + name);
@@ -841,56 +850,3 @@ Ptr<Instance::Manager> shippingInstanceManager() {
   return new Shipping::ManagerImpl();
 }
 
-
-/* Path Algorithm */
-/*
-std::vector<Path::Ptr> constrainedGraph(Location::Ptr loc, Mile distance, Cost cost, Time time, Segment::Expedite expedited){
-
-
-
-
-
-
-}
-
-
-vector<Path::Ptr> Engine::connections(Location::Ptr start, Location::Ptr end){
-	vector<Path::Ptr> results;
-	list<Path::Ptr> frontier;
-	
-	Path::Ptr emptySlow = Path::PathNew(this, Segment::unsupported() );
-	Path::Ptr emptyFast = Path::PathNew(this, Segment::supported() );
-	
-	for(i = 0; i < start->segments(); i++){
-		Segment::Ptr seg = start->segmentAtIndex(i);
-		Path::Ptr currSlow = Path::PathNew(emptySlow);
-		Path::Ptr currFast = Path::PathNew(emptyFast);
-		bool slowValid = currSlow->segmentAdd(seg);
-		bool fastValid = currFast->segmentAdd(seg);
-		if(slowValid) frontier.push_back(currSlow);
-		if(fastValid) frontier.push_back(currFast);
-	}
-	
-	while( !frontier.empty() ) {
-		Path::Ptr curr = frontier.front();
-		frontier.pop_front;
-		Location::Ptr last = curr.lastNode();
-		if(NULL == last) continue;
-		if(end == last){
-			results.append(Path::PathNew(curr));
-			continue;
-		}
-		for(int i = 0; i < last->segments(); i++){
-			Path::Ptr currSpawn = Path::PathNew(curr);
-			Segment::Ptr seg = start->segmentAtIndex(i);
-			bool valid = currSpawn->segmentAdd(seg);
-			if(valid) frontier.push_back(currSpawn);
-		}
-
-	} // end while loop
-
-	return results;
-}
-
-
-*/
