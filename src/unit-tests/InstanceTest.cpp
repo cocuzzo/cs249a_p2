@@ -40,6 +40,12 @@ TEST(InstanceTest, basicFunctionality) {
   ASSERT_TRUE (NULL != truckSeg3);
   Ptr<Instance> planeSeg3 = manager->instanceNew("planeSeg3", "Plane segment");
   ASSERT_TRUE (NULL != planeSeg3);
+  
+  Ptr<Instance> boatSeg3Copy = manager->instanceNew("port1", "Port"); 
+  ASSERT_TRUE (NULL == boatSeg3Copy); 
+  Ptr<Instance> truckSeg1Copy = manager->instanceNew("truckSeg1", "Truck segment");
+  ASSERT_TRUE (NULL == truckSeg1Copy);
+ 
 
   
   truckSeg1->attributeIs("source", "customer1");
@@ -65,13 +71,13 @@ TEST(InstanceTest, basicFunctionality) {
   planeSeg2->attributeIs("difficulty", "5.0");
   planeSeg3->attributeIs("expedite support", "yes");
   
-  EXPECT_EQ("100", truckSeg1->attribute("length"));
+  EXPECT_EQ("100.00", truckSeg1->attribute("length"));
   EXPECT_EQ("1.00", truckSeg2->attribute("difficulty"));
   EXPECT_EQ("yes", truckSeg3->attribute("expedite support"));
-  EXPECT_EQ("3456", boatSeg1->attribute("length"));
+  EXPECT_EQ("3456.00", boatSeg1->attribute("length"));
   EXPECT_EQ("2.34", boatSeg2->attribute("difficulty"));
   EXPECT_EQ("yes", boatSeg3->attribute("expedite support"));
-  EXPECT_EQ("2", planeSeg1->attribute("length"));
+  EXPECT_EQ("2.00", planeSeg1->attribute("length"));
   EXPECT_EQ("5.00", planeSeg2->attribute("difficulty"));
   EXPECT_EQ("yes", planeSeg3->attribute("expedite support"));
   
@@ -164,10 +170,109 @@ TEST(InstanceTest, fleetConnStatsCreation) {
 }
 
 
+TEST(InstanceTest, instanceDeletion) {
+ 	Ptr<Instance::Manager> manager = shippingInstanceManager();
+  ASSERT_TRUE( NULL != manager );
+  
+  Ptr<Instance> fleet = manager->instanceNew("myFleet", "Fleet");
+	ASSERT_TRUE (NULL != fleet);
+  Ptr<Instance> conn = manager->instanceNew("myConn", "Conn");
+	ASSERT_TRUE (NULL != conn);
+	Ptr<Instance> stats = manager->instanceNew("myStats", "Stats");
+	ASSERT_TRUE (NULL != stats);
+	
+	
+	Ptr<Instance> customer1 = manager->instanceNew("customer1", "Customer");  
+  ASSERT_TRUE (NULL != customer1);
+  Ptr<Instance> truckSeg1 = manager->instanceNew("truckSeg1", "Truck segment");
+  ASSERT_TRUE (NULL != truckSeg1);
+  Ptr<Instance> truckSeg2 = manager->instanceNew("truckSeg2", "Truck segment");
+  ASSERT_TRUE (NULL != truckSeg2);
+  Ptr<Instance> truckSeg3 = manager->instanceNew("truckSeg3", "Truck segment");
+  ASSERT_TRUE (NULL != truckSeg3);
+
+	truckSeg1->attributeIs("source", "customer1");
+  truckSeg2->attributeIs("source", "customer1");
+  truckSeg3->attributeIs("source", "customer1");
+  truckSeg1->attributeIs("return segment", "truckSeg2");
+
+  manager->instanceDel("truckSeg2");
+ 	EXPECT_EQ("", truckSeg1->attribute("return segment"));
+ 	EXPECT_EQ("truckSeg1", customer1->attribute("segment1"));
+ 	EXPECT_EQ("truckSeg3", customer1->attribute("segment2"));
+ 	
+ 	EXPECT_EQ("", customer1->attribute("segment3"));
+	EXPECT_EQ("", truckSeg2->attribute("source"));
+	
+	manager->instanceDel("customer1");
+	EXPECT_EQ("", truckSeg1->attribute("source"));
+	EXPECT_EQ("", truckSeg3->attribute("source"));
+	
+}
 
 
-
-
+TEST(InstanceTest, settingSourceAndReturn) {
+ 	Ptr<Instance::Manager> manager = shippingInstanceManager();
+  ASSERT_TRUE( NULL != manager );
+  
+  Ptr<Instance> customer1 = manager->instanceNew("customer1", "Customer");  
+	ASSERT_TRUE (NULL != customer1);  
+  Ptr<Instance> port1 = manager->instanceNew("port1", "Port");
+  ASSERT_TRUE (NULL != port1);
+  Ptr<Instance> truckTerm1 = manager->instanceNew("truckTerm1", "Truck terminal");
+  ASSERT_TRUE (NULL != truckTerm1);
+  Ptr<Instance> boatTerm1 = manager->instanceNew("boatTerm1", "Boat terminal");
+  ASSERT_TRUE (NULL != boatTerm1);
+  Ptr<Instance> planeTerm1 = manager->instanceNew("planeTerm1", "Plane terminal");
+  ASSERT_TRUE (NULL != planeTerm1);
+  Ptr<Instance> truckSeg1 = manager->instanceNew("truckSeg1", "Truck segment");
+  ASSERT_TRUE (NULL != truckSeg1);
+  Ptr<Instance> boatSeg1 = manager->instanceNew("boatSeg1", "Boat segment");
+  ASSERT_TRUE (NULL != boatSeg1);
+  Ptr<Instance> planeSeg1 = manager->instanceNew("planeSeg1", "Plane segment");
+  ASSERT_TRUE (NULL != planeSeg1);
+  Ptr<Instance> boatSeg2 = manager->instanceNew("boatSeg2", "Boat segment"); 
+  ASSERT_TRUE (NULL != boatSeg2); 
+  Ptr<Instance> truckSeg2 = manager->instanceNew("truckSeg2", "Truck segment");
+  ASSERT_TRUE (NULL != truckSeg2);
+  Ptr<Instance> planeSeg2 = manager->instanceNew("planeSeg2", "Plane segment");
+  ASSERT_TRUE (NULL != planeSeg2);
+  Ptr<Instance> boatSeg3 = manager->instanceNew("boatSeg3", "Boat segment"); 
+  ASSERT_TRUE (NULL != boatSeg3); 
+  Ptr<Instance> truckSeg3 = manager->instanceNew("truckSeg3", "Truck segment");
+  ASSERT_TRUE (NULL != truckSeg3);
+  Ptr<Instance> planeSeg3 = manager->instanceNew("planeSeg3", "Plane segment");
+  ASSERT_TRUE (NULL != planeSeg3);
+  
+  truckSeg1->attributeIs("source", "planeTerm1");
+  planeSeg1->attributeIs("source", "boatTerm1");
+  boatSeg1->attributeIs("source", "truckTerm1");
+ 	truckSeg1->attributeIs("return segment", "planeSeg2");
+  planeSeg1->attributeIs("return segment", "boatSeg2");
+  boatSeg1->attributeIs("return segment", "truckSeg2");
+  
+  EXPECT_EQ("", truckSeg1->attribute("source"));
+	EXPECT_EQ("", planeSeg1->attribute("source"));
+	EXPECT_EQ("", boatSeg1->attribute("source"));
+	EXPECT_EQ("", truckSeg1->attribute("return segment"));
+	EXPECT_EQ("", planeSeg1->attribute("return segment"));
+	EXPECT_EQ("", boatSeg1->attribute("return segment"));
+  
+  truckSeg1->attributeIs("source", "truckTerm1");
+  planeSeg1->attributeIs("source", "planeTerm1");
+  boatSeg1->attributeIs("source", "boatTerm1");
+ 	truckSeg1->attributeIs("return segment", "truckSeg2");
+  planeSeg1->attributeIs("return segment", "planeSeg2");
+  boatSeg1->attributeIs("return segment", "boatSeg2");
+  
+  EXPECT_EQ("truckTerm1", truckSeg1->attribute("source"));
+	EXPECT_EQ("planeTerm1", planeSeg1->attribute("source"));
+	EXPECT_EQ("boatTerm1", boatSeg1->attribute("source"));
+	EXPECT_EQ("truckSeg2", truckSeg1->attribute("return segment"));
+	EXPECT_EQ("planeSeg2", planeSeg1->attribute("return segment"));
+	EXPECT_EQ("boatSeg2", boatSeg1->attribute("return segment"));
+  
+}
 
 
 
