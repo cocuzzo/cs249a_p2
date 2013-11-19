@@ -541,6 +541,10 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 		if(seg_ == NULL) throw string("Error: Trying to access deleted instance");
 		
 		if("source" == name){
+			if("" == v){
+				seg_->sourceIs(NULL);
+				return;
+			}
 			Engine::Ptr eng = manager_->engine();
 			Location::Ptr source = eng->location(v);
 			if(source == NULL) throw string("Error: Invalid source name => " + v);
@@ -551,6 +555,10 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 			seg_->lengthIs(length);
 		}
 		else if("return segment" == name){
+			if("" == v){
+				seg_->returnSegmentIs(NULL);
+				return;
+			}
 			Engine::Ptr eng = manager_->engine();
 			Segment::Ptr returnSeg = eng->segment(v);
 			if(returnSeg == NULL)	throw string("Error: Invalid return segment name => " + v);
