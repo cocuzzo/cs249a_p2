@@ -22,6 +22,18 @@ namespace Shipping {
 #define MAX_SPEED DBL_MAX
 #define MAX_TIME DBL_MAX
 
+class Exception {
+public:
+	Exception(char const * str) : what_(str) { }
+	Exception(std::string str) : what_(str) { }
+	std::string what() const { return what_; }
+  virtual ~Exception() { }
+protected:
+
+private:
+	std::string what_;
+};
+
 // ordinal types
 class Mile : public Ordinal<Mile, double> {
 public:
@@ -29,7 +41,7 @@ public:
 		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Mile value error: " << num;
-			throw err.str();
+			throw Exception( err.str() );
 		}
 	}
 	std::string toString() { 
@@ -46,7 +58,7 @@ public:
 		if (num < 1.0 || num > 5.0) {
 			std::ostringstream err;
 			err << "Difficulty value error: " << num;
-			throw err.str();
+			throw Exception( err.str() );
 		}
 	}
 	std::string toString() { 
@@ -62,7 +74,7 @@ public:
 		if (num <= 0.0) {
 			std::ostringstream err;
 			err << "Speed value error: " << num;
-			throw err.str();
+			throw Exception( err.str() );
 		}
 	}
 	std::string toString() { 
@@ -79,7 +91,7 @@ public:
 		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Cost value error: " << num;
-			throw err.str();
+			throw Exception( err.str() );
 		}
 	}
 	std::string toString() { 
@@ -96,7 +108,7 @@ public:
 		if (num < 0) {
 			std::ostringstream err;
 			err << "Capacity value error: " << num;
-			throw err.str();
+			throw Exception( err.str() );
 		}
 	}
 	std::string toString() { return std::to_string(value_); }
@@ -108,7 +120,7 @@ public:
 		if (num < 0.0) {
 			std::ostringstream err;
 			err << "Time value error: " << num;
-			throw err.str();
+			throw Exception( err.str() );
 		}
 	}
 	std::string toString() { 

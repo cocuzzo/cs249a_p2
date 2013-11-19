@@ -199,7 +199,7 @@ Engine::locationNew(const std::string& name, Location::LocationType locationType
   // add reactor to internal name->reactor map
   auto result = locReactors_.insert(make_pair(name, reactor));
   if (result.second == false) {
-    free(reactor);
+    delete reactor;
     cerr << "unable to add location reactor to map in Engine::locationNew" << endl;
   } else {
     // notify interested party

@@ -315,7 +315,7 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 			 name == connName_  ||
 			 name == "")
 		{
-			throw string("Error: Already have instance named " + name);
+			throw Exception( string("Error: Already have instance named " + name) );
 		}
 		
 		if (type == "Customer") {
@@ -364,7 +364,7 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 				statsName_ = name;
 			}
 			else {
-				throw string("Error: Only 1 allowed stats instance, returning stats instance named " + statsName_);
+				throw Exception( string("Error: Only 1 allowed stats instance, returning stats instance named " + statsName_) );
 			}
 		}
 		else if (type == "Conn") {
@@ -373,7 +373,7 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 				connName_ = name;
 			}
 			else {
-				throw string("Error: Only 1 allowed conn instance, returning conn instance named " + connName_); 
+				throw Exception( string("Error: Only 1 allowed conn instance, returning conn instance named " + connName_) ); 
 			}
 		}
 		else if (type == "Fleet") {
@@ -382,16 +382,16 @@ Ptr<Instance> ManagerImpl::instanceNew(const string& name, const string& type) {
 				fleetName_ = name;
 			}
 			else {
-				throw string("Error: Only 1 allowed fleet instance, returning fleet instance named " + fleetName_);
+				throw Exception( string("Error: Only 1 allowed fleet instance, returning fleet instance named " + fleetName_) );
 			}
 		}
 		else{
-			throw string("Error: Invalid instance type " + type);
+			throw Exception( string("Error: Invalid instance type " + type) );
 		}
   } //end try block
-  catch(string& msg){
-  	cerr << msg << endl;
-  }//end catch block
+  catch(Exception& e){
+		cerr << e.what() << endl;
+	}//end catch block
   
   return newInst;
 }
@@ -441,8 +441,8 @@ void ManagerImpl::instanceDel(const string& name) {
 		}
 	}//end try block
 	
-	catch(string& msg){
-		cerr << msg << endl;
+	catch(Exception& e){
+		cerr << e.what() << endl;
 	}//end catch block
 }
 
@@ -458,18 +458,18 @@ LocationRep::~LocationRep(){
 string LocationRep::attribute(const string& name) {
 	string response;
 	try{	
-		if(loc_ == NULL) throw string("Error: Trying to access deleted instance");
+		if(loc_ == NULL) throw Exception( string("Error: Trying to access deleted instance") );
 		int index = segmentNumber(name);
 		if(index == -1) throw string("Error: Invalid attribute => " + name);
 		//index into vector starts at 0, client will start at 1
 		Segment::Ptr seg = loc_->segmentAtIndex(index - 1);
 		if(NULL == seg){
-			throw string("Error: Invalid segment number ");
+			throw Exception( string("Error: Invalid segment number ") );
 		}
 		response = seg->name();
 	}//end try block
-	catch(string& msg){
-		cerr << msg << endl;
+	catch(Exception& e){
+		cerr << e.what() << endl;
 	}//end catch block
 	return response;
 }
@@ -502,7 +502,7 @@ SegmentRep::~SegmentRep(){
 string SegmentRep::attribute(const string& name){
 	string response;
 	try{
-		if(seg_ == NULL) throw string("Error: Trying to access deleted instance");
+		if(seg_ == NULL) throw Exception( string("Error: Trying to access deleted instance") );
 		
 		if("source" == name){
 			Location::Ptr source = seg_->source();
@@ -525,11 +525,11 @@ string SegmentRep::attribute(const string& name){
 			response = (Segment::supported() == exp) ? "yes" : "no";
 		}
 		else{
-			throw string("Error: Invalid attribute => " + name);
+			throw Exception( string("Error: Invalid attribute => " + name) );
 		}
 	}//end try block
-	catch(string& msg){
-		cerr << msg << endl;
+	catch(Exception& e){
+		cerr << e.what() << endl;
 	}//end catch block
 	
 	return response;
@@ -538,7 +538,7 @@ string SegmentRep::attribute(const string& name){
 
 void SegmentRep::attributeIs(const string& name, const string& v){
 	try{	
-		if(seg_ == NULL) throw string("Error: Trying to access deleted instance");
+		if(seg_ == NULL) throw Exception( string("Error: Trying to access deleted instance") );
 		
 		if("source" == name){
 			if("" == v){
@@ -547,7 +547,7 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 			}
 			Engine::Ptr eng = manager_->engine();
 			Location::Ptr source = eng->location(v);
-			if(source == NULL) throw string("Error: Invalid source name => " + v);
+			if(source == NULL) throw Exception( string("Error: Invalid source name => " + v) );
 			seg_->sourceIs(source);
 		}
 		else if("length" == name){
@@ -561,7 +561,7 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 			}
 			Engine::Ptr eng = manager_->engine();
 			Segment::Ptr returnSeg = eng->segment(v);
-			if(returnSeg == NULL)	throw string("Error: Invalid return segment name => " + v);
+			if(returnSeg == NULL)	throw Exception( string("Error: Invalid return segment name => " + v) );
 			seg_->returnSegmentIs(returnSeg);
 		}
 		else if("difficulty" == name){
@@ -576,15 +576,15 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 				seg_->expediteIs(Segment::unsupported());
 			}
 			else{
-				throw string("Error: Invalid expedite value " + v);
+				throw Exception( string("Error: Invalid expedite value " + v) );
 			}
 		}
 		else{
-			throw string("Error: Invalid attribute => " + name);
+			throw Exception( string("Error: Invalid attribute => " + name) );
 		}
 	}//end try block
-	catch(string& msg){
-		cerr << msg << endl;
+	catch(Exception& e){
+		cerr << e.what() << endl;
 	}//end catch block
 
 }
@@ -608,11 +608,11 @@ string StatsRep::attribute(const string& name){
 			s << std::string(buf);
 		}
 		else {
-			throw string("Error: Invalid attribute => " + name);
+			throw Exception( string("Error: Invalid attribute => " + name) );
 		}
 	}//end try block
-	catch(string& msg){
-		cerr << msg << endl;
+	catch(Exception& e){
+		cerr << e.what() << endl;
 	}//end catch block
 	return s.str();
 }
@@ -641,8 +641,8 @@ string FleetRep::attribute(const string& name){
 		else if("Plane" == type && "speed" == attr) response = eng->planeFleet()->speed().toString();
 		
 	}//end try block
-	catch(string msg){
-		cerr << msg << endl;
+	catch(Exception& e){
+		cerr << e.what() << endl;
 	}//end catch block
 	return response;
 }
@@ -692,8 +692,8 @@ void FleetRep::attributeIs(const string& name, const string& v){
 		}
 		
 	}//end try block
-	catch(string msg){
-		cerr << msg << endl;
+	catch(Exception& e){
+		cerr << e.what() << endl;
 	}//end catch block
 	
 }
@@ -773,11 +773,11 @@ string ConnRep::attribute(const string& name){
 			response = stringifyConnect(paths);
 		}
 		else{
-			throw string("Error: Invalid attribute => " + name);
+			throw Exception( string("Error: Invalid attribute => " + name) );
 		}
 	}//end try block
-	catch(string msg){
-		cerr << msg << endl;
+	catch(Exception& e){
+		cerr << e.what() << endl;
 	}//end catch block
 	
 	return response;
@@ -791,19 +791,19 @@ void ConnRep::parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& ti
 	while( i < numTokens ){
 		if("distance" == tokens[i]){
 			++i;
-			if(i >= numTokens) throw string("Error: No value field");
+			if(i >= numTokens) throw Exception( string("Error: No value field") );
 			dist = Mile( atoi(tokens[i].c_str()) );
 			++i;
 		}
 		else if("cost" == tokens[i]){
 			++i;
-			if(i >= numTokens) throw string("Error: No value field");
+			if(i >= numTokens) throw Exception( string("Error: No value field") );
 			cost = Cost(atof( tokens[i].c_str()) );
 			++i;
 		}
 		else if("time" == tokens[i]){
 			++i;
-			if(i >= numTokens) throw string("Error: No value field");
+			if(i >= numTokens) throw Exception( string("Error: No value field") );
 			time = Time( atoi( tokens[i].c_str()) );
 			++i;
 		}
@@ -812,7 +812,7 @@ void ConnRep::parseAttr(vector<string>& tokens, Mile& dist, Cost& cost, Time& ti
 			++i;
 		}
 		else{
-			throw string("Error: Invalid attribute => " + tokens[i]);
+			throw Exception( string("Error: Invalid attribute => " + tokens[i]) );
 		} 
 	}//end while
 }
