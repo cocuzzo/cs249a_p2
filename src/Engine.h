@@ -159,6 +159,7 @@ public:
 	
 	static Location::Ptr LocationNew(const std::string& _name, LocationType _locType) {
 		Ptr m = new Location(_name, _locType);
+		if (m == NULL) throw Exception ("failed to create new location in Location::LocationNew");
   	return m;
 	}
 		
@@ -322,6 +323,7 @@ public:
 	
 	static Segment::Ptr SegmentNew(const std::string& _name, SegmentType _segType) {
 		Ptr m = new Segment(_name, _segType);
+		if (m == NULL) throw Exception ("failed to create new segment in Segment::SegmentNew");
     return m;
 	}
 
