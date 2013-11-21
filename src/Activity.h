@@ -11,26 +11,19 @@
 
 using std::string;
 
-/* Define the type 'Time' */
-class Time : public Ordinal<Time,double> {
-public:
-    Time(double time) : Ordinal<Time,double>(time)
-    {}
-};
-
 class Activity : public Fwk::PtrInterface<Activity> {
  public:
     typedef Fwk::Ptr<Activity> Ptr;
     
-    /* Notifiee class for Activities */
- class Notifiee : public Fwk::BaseNotifiee<Activity> {
+	/* Notifiee class for Activities */
+	class Notifiee : public Fwk::BaseNotifiee<Activity> {
     public:
-	typedef Fwk::Ptr<Notifiee> Ptr;
+			typedef Fwk::Ptr<Notifiee> Ptr;
 
-        Notifiee(Activity* act) : Fwk::BaseNotifiee<Activity>(act) {}
+      Notifiee(Activity* act) : Fwk::BaseNotifiee<Activity>(act) {}
 
-        virtual void onNextTime() {}
-	virtual void onStatus() {}
+      virtual void onNextTime() {}
+			virtual void onStatus() {}
     };
 
     class Manager;
@@ -51,33 +44,30 @@ class Activity : public Fwk::PtrInterface<Activity> {
 
     virtual string name() const { return name_; }
 
-protected:
-    Activity(const string &name)
-        : name_(name)
-    {}
+	protected:
+    Activity(const string &name): name_(name) {}
 
-private:
+	private:
     string name_;
 
 };
 
 class Activity::Manager : public Fwk::PtrInterface<Activity::Manager> {
-public:
-    typedef Fwk::Ptr<Activity::Manager> Ptr;
+	public:
+		typedef Fwk::Ptr<Activity::Manager> Ptr;
+		
+		virtual Fwk::Ptr<Activity> activityNew(const string &name) = 0;
+		
+		virtual Fwk::Ptr<Activity> activity(const string &name) const = 0;
+		
+		virtual void activityDel(const string &name) = 0;
+		
+		virtual void lastActivityIs(Activity::Ptr) = 0;
+		
+		virtual Time now() const = 0;
+		virtual void nowIs(Time) = 0;
 
-    virtual Fwk::Ptr<Activity> activityNew(const string &name) = 0;
-
-    virtual Fwk::Ptr<Activity> activity(const string &name) const = 0;
-
-    virtual void activityDel(const string &name) = 0;
-
-    virtual void lastActivityIs(Activity::Ptr) = 0;
-
-    virtual Time now() const = 0;
-    virtual void nowIs(Time) = 0;
-
-
-private:
+	private:
     /* Up to you */
 
 };
