@@ -187,20 +187,21 @@ Engine::locationNew(const std::string& name, Location::LocationType locationType
   // create new Location
   Location::Ptr loc = Location::LocationNew(name, locationType);
   if (!loc) {
-    cerr << "unable to create new location in Engine::locationNew" << endl;
-    return NULL;
+    // cerr << "unable to create new location in Engine::locationNew" << endl;
+    throw Exception ("unable to create new location in Engine::locationNew");
   }
   // create new LocationReactor using Location
   LocationReactor *reactor = LocationReactor::LocationReactorIs(loc.ptr(), this);
   if (!reactor) {
-    cerr << "unable to create new location reactor in Engine::locationNew" << endl;
-    return NULL;
+    // cerr << "unable to create new location reactor in Engine::locationNew" << endl;
+    throw Exception ("unable to create new location reactor in Engine::locationNew");
   }
   // add reactor to internal name->reactor map
   auto result = locReactors_.insert(make_pair(name, reactor));
   if (result.second == false) {
     delete reactor;
-    cerr << "unable to add location reactor to map in Engine::locationNew" << endl;
+    // cerr << "unable to add location reactor to map in Engine::locationNew" << endl;
+    throw Exception ("unable to add location reactor to map in Engine::locationNew");
   } else {
     // notify interested party
     if(notifiee_) try {
@@ -217,20 +218,21 @@ Engine::segmentNew(const std::string& name, Segment::SegmentType segmentType){
   // create new Segment
   Segment::Ptr seg = Segment::SegmentNew(name, segmentType);
   if (!seg) {
-    cerr << "unable to create new segment in Engine::segmentNew" << endl;
-    return NULL;
+    // cerr << "unable to create new segment in Engine::segmentNew" << endl;
+    throw Exception ("unable to create new segment in Engine::segmentNew");
   }
   // create new SegmentReaction using Segment
   SegmentReactor *reactor = SegmentReactor::SegmentReactorIs(seg.ptr(), this);
   if (!reactor) {
-    cerr << "unable to create new segment reactor in Engine::segmentNew" << endl;
-    return NULL;
+    // cerr << "unable to create new segment reactor in Engine::segmentNew" << endl;
+    throw Exception ("unable to create new segment reactor in Engine::segmentNew");
   }
   // add reactor to internal name->reactor map
   auto result = segReactors_.insert(make_pair(name, reactor));
   if (result.second == false) {
     delete reactor;
-    cerr << "unable to add segment reactor to map in Engine::segmentNew" << endl;
+    // cerr << "unable to add segment reactor to map in Engine::segmentNew" << endl;
+    throw Exception ("unable to add segment reactor to map in Engine::segmentNew");
   } else {
     // notify interested party
     if(notifiee_) try {
