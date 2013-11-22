@@ -21,6 +21,7 @@ Fwk::Ptr<Activity::Manager> ManagerImpl::activityManagerInstance() {
 	return activityInstance_;
 }
     
+    
 Activity::Ptr ManagerImpl::activityNew(const string& name) {
 	Activity::Ptr activity = activities_[name];
 	if (activity != NULL) {
@@ -64,47 +65,25 @@ void ManagerImpl::nowIs(Time t) {
 			break;
 		}
 		
-		now_ = nextToRun->nextTime();
-
-		//run the minimum time activity and remove it from the queue
-		scheduledActivities_.pop();
-
-		nextToRun->statusIs(Activity::executing);
-		nextToRun->statusIs(Activity::free);
-	}
-	//synchronize the time
-	now_ = t;
-}
-
-void RealManagerImpl::nowIs(Time t) {
-	//find the most recent activites to run and run them in order
-	while (!scheduledActivities_.empty()) {
-	    
-		//figure out the next activity to run
-		Activity::Ptr nextToRun = scheduledActivities_.top();
-	
-		//if the next time is greater than the specified time, break
-		//the loop
-		if (nextToRun->nextTime() > t) {
-			break;
+		if(activityTime_ == realTime()){
+			//calculate amount of time to sleep
+			Time diff = Time(nextToRun->nextTime().value() - now_.value());
+			//sleep 100ms (100,000 microseconds) for every unit of time
+			usleep(( ((int)diff.value()) * 100000));
 		}
 		
-		//calculate amount of time to sleep
-		Time diff = Time(nextToRun->nextTime().value() - now_.value());
-		//sleep 100ms (100,000 microseconds) for every unit of time
-		usleep(( ((int)diff.value()) * 100000));
-		
 		now_ = nextToRun->nextTime();
-	
+
 		//run the minimum time activity and remove it from the queue
 		scheduledActivities_.pop();
-	
+
 		nextToRun->statusIs(Activity::executing);
 		nextToRun->statusIs(Activity::free);
 	}
 	//synchronize the time
 	now_ = t;
 }
+
 
 
 } //end namespace ActivityImpl

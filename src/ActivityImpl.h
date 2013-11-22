@@ -50,6 +50,11 @@ class ManagerImpl : public Activity::Manager {
 	public:
 		typedef Ptr<ManagerImpl> Ptr;
 		
+		static Fwk::Ptr<Activity::Manager> activityManagerInstance();
+		
+		virtual ActivityTime activityTime() { return activityTime_; }  
+		virtual void activityTimeIs(ActivityTime _activityTime){ activityTime_ = _activityTime; }
+		
 		virtual Activity::Ptr activityNew(const string& name);
 		virtual Activity::Ptr activity(const string& name) const;
 		virtual void activityDel(const string& name);
@@ -57,36 +62,21 @@ class ManagerImpl : public Activity::Manager {
 		virtual Time now() const { return now_; }
 		virtual void nowIs(Time time);
 		
-		static Fwk::Ptr<Activity::Manager> activityManagerInstance();
-		
 		virtual void lastActivityIs(Activity::Ptr activity);
-		
 		
 	protected:
 		ManagerImpl() : now_(0.0) {
-			//queue_ = new Queue();
+			activityTime_ = virtualTime();
 		}
 		
 		//Data members
 		priority_queue<Activity::Ptr, vector<Activity::Ptr>, ActivityComp> scheduledActivities_;
 		map<string, Activity::Ptr> activities_; //pool of all activities
 		Time now_;
-		
-		//specific things to add???
+		ActivityTime activityTime_;
 		
 		//singleton instance
 		static Fwk::Ptr<Activity::Manager> activityInstance_;	
-
-};
-
-
-class RealManagerImpl : public ManagerImpl {
-	public:
-		typedef Ptr<RealManagerImpl> Ptr;
-		
-		virtual void nowIs(Time time);
-		
-	protected:
 
 };
 

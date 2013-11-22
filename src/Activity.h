@@ -56,6 +56,16 @@ class Activity::Manager : public Fwk::PtrInterface<Activity::Manager> {
 	public:
 		typedef Fwk::Ptr<Activity::Manager> Ptr;
 		
+		enum ActivityTime {
+			virtualTime_ = 0,
+			realTime_ = 1
+		};
+		static inline ActivityTime virtualTime() { return virtualTime_; }
+		static inline ActivityTime realTime() { return realTime_; }
+		
+		virtual ActivityTime activityTime() = 0;
+		virtual void activityTimeIs(ActivityTime _activityTime) = 0;
+		
 		virtual Fwk::Ptr<Activity> activityNew(const string &name) = 0;
 		
 		virtual Fwk::Ptr<Activity> activity(const string &name) const = 0;
