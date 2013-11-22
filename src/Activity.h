@@ -66,6 +66,8 @@ class Activity::Manager : public Fwk::PtrInterface<Activity::Manager> {
 		virtual ActivityTime activityTime() = 0;
 		virtual void activityTimeIs(ActivityTime _activityTime) = 0;
 		
+		virtual void engineIs(Fwk::Ptr<class PtrInterface<Engine> > _engine) = 0;
+		
 		virtual Fwk::Ptr<Activity> activityNew(const string &name) = 0;
 		
 		virtual Fwk::Ptr<Activity> activity(const string &name) const = 0;

@@ -55,6 +55,8 @@ class ManagerImpl : public Activity::Manager {
 		virtual ActivityTime activityTime() { return activityTime_; }  
 		virtual void activityTimeIs(ActivityTime _activityTime){ activityTime_ = _activityTime; }
 		
+		virtual void engineIs(Fwk::Ptr<class Engine> _engine) { engine_ = _engine; }
+		
 		virtual Activity::Ptr activityNew(const string& name);
 		virtual Activity::Ptr activity(const string& name) const;
 		virtual void activityDel(const string& name);
@@ -74,6 +76,7 @@ class ManagerImpl : public Activity::Manager {
 		map<string, Activity::Ptr> activities_; //pool of all activities
 		Time now_;
 		ActivityTime activityTime_;
+		Fwk::Ptr<Engine> engine_;
 		
 		//singleton instance
 		static Fwk::Ptr<Activity::Manager> activityInstance_;	
