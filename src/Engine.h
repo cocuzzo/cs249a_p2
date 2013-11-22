@@ -13,6 +13,7 @@
 #include "Ptr.h"
 #include "PtrInterface.h"
 #include "Instance.h"
+#include "Activity.h"
 
 namespace Shipping {
 
@@ -21,6 +22,7 @@ namespace Shipping {
 #define MAX_MILE DBL_MAX
 #define MAX_SPEED DBL_MAX
 #define MAX_TIME DBL_MAX
+#define MAX_CAPACITY DBL_MAX
 
 class Exception {
 public:
@@ -33,6 +35,16 @@ protected:
 private:
 	std::string what_;
 };
+
+// TODO START
+// remove forward declarations from Activity.h
+class InjectActivity;
+class ForwardActivity;
+
+class InjectActivityReactor;
+class ForwardActivityReactor;
+
+// TODO END
 
 // ordinal types
 class Mile : public Ordinal<Mile, double> {
@@ -131,6 +143,42 @@ public:
 	static Time Max() { return Time(MAX_TIME);	}
 };
 
+class Shipment {
+	typedef Fwk::Ptr<Shipment const> PtrConst;
+	typedef Fwk::Ptr<Shipment> Ptr;
+
+public:
+
+	static inline Capacity size() { return size_; }
+	static inline Location::Ptr source() { return source_; }
+	static inline Location::Ptr destination() { return desination_; }
+	static inline Time startTime() { return startTime_; }
+	static inline Time finishTime() { return finishTime_; }
+	static inline Mile distance() { return distance_; }
+	static inline Cost cost() { return cost_; }
+
+	void distanceIs(Mile _distance) { distance_ = _distance; }
+	void costIs(Cost _cost) { cost_ = _cost; }
+
+	static Shipment::Ptr Shipment(Location::Ptr _source, Location::Ptr _destination, 
+		Capacity _size) {
+		Ptr m = new Shipment(_source, _destination, _size);
+		if (m == NULL) throw Exception ("failed to create new Shipment in Shipment::Shipment");
+  	return m;
+	}
+
+protected:
+	Capacity size_;
+	Location::Ptr source_;
+	Location::Ptr destination_;
+	Time startTime_;	// TODO: should startTime be passed into constructor?
+	Time finishTime;
+	Mile distance_;
+	Cost cost_;
+
+	Shipment(Location::Ptr _source, Location::Ptr _destination, _size);
+};
+
 class Segment; //Forward declaration for Location
 
 class Location : public Fwk::PtrInterface<Location> {
@@ -167,6 +215,23 @@ public:
 	virtual void segmentRemove(Fwk::Ptr<Segment> _segment);
 	inline U32 segments() const { return segments_.size(); }
 	virtual Fwk::Ptr<Segment> segmentAtIndex(unsigned int _index);
+	void shipmentIs(Shipment::Ptr _shipment); // indicates that a shipment has arrived
+
+	static inline U32 shipmentRate() { return shipmentRate_; }
+	static inline Capacity shipmentSize() { return capacity_; }
+	static inline Location::Ptr shipmentDesination() { return shipmentDestination_; }
+
+	void shipmentRateIs(U32 _shipmentRate);
+	void shipmentSizeIs(Capacity _shipmentSize);
+	void shipmentDestinationIs(Location::Ptr _shipmentDestination);
+
+	static inline U32 shipmentsReceived() { return shipmentsReceived_; }
+	static inline Time shipmentsAvgLatency() { return shipmentsAvgLatency_; }
+	static inline Cost shipmentsTotalCost() { return shipmentsTotalCost_; }
+
+	void shipmentsReceivedIs(U32 _shipmentsReceived) { shipmentsReceived_ = _shipmentsReceived; }
+	void shipmentsAvgLatencyIs(Time _shipmentsAvgLatency) { shipmentsAvgLatency_ = _shipmentsAvgLatency; }
+	void shipmentsTotalCost(Cost _shipmentsTotalCost) { shipmentsTotalCost_ = _shipmentsTotalCost; }
 
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
@@ -179,6 +244,10 @@ public:
 		virtual void notifierIs(const Location::PtrConst& _notifier);
 		
 		virtual void onLocationDel() {}
+		virtual void onShipmentRate() {}
+		virtual void onShipmentSize() {}
+		virtual void onShipmentDestination() {}
+		virtual void onShipment(Shipment::Ptr s) {}
 		
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
@@ -212,6 +281,16 @@ protected:
 	LocationType locType_;
 	std::string name_;
 	std::list<Fwk::Ptr<Segment>> segments_;
+
+	// parameters for shipments (only for Customers)
+	Capacity shipmentRate_;
+	Capacity shipmentSize_;
+	Location::Ptr shipmentDestination_;
+
+	// stats for shipments
+	U32 shipmentsReceived_; // TODO: should this be of type Capacity?
+	Time shipmentsAvgLatency_;
+	Cost shipmentsTotalCost_;
 
 	NotifieeConst *notifiee_;
   void newNotifiee( Location::NotifieeConst * n ) const {
@@ -307,6 +386,7 @@ public:
 		planeSeg_ = 2,
 		truckSeg_ = 3
 	};
+
 	SegmentType segmentType() const {return segType_; }
 	static inline SegmentType undefinedSeg() { return undefinedSeg_; }
 	static inline SegmentType boatSeg() { return boatSeg_; }
@@ -337,6 +417,9 @@ public:
 	void difficultyIs(Difficulty _diff) { diff_ = _diff; }
 	inline Expedite expedite() const { return expedite_; }
 	void expediteIs(Expedite _expedite);
+
+	// indicates that a shipment has arrived on this segment
+	void shipmentIs(Shipment _shipment);
 	
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
@@ -352,6 +435,7 @@ public:
 		virtual void onSegmentReturn() {}
 		virtual void onSegmentExpedite() {}
 		virtual void onSegmentDel() {}
+		virtual void onShipment(Shipment::Ptr s) {}
 		
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
@@ -388,6 +472,11 @@ protected:
 	Segment::Ptr returnSegment_;
 	Difficulty diff_;
 	Expedite expedite_;
+
+	// stats for shipments
+	U32 shipmentsReceived_;
+	U32 shipmentsRefused_;
+	Capacity capacity_;
 
 	NotifieeConst *notifiee_;
   void newNotifiee( Segment::NotifieeConst * n ) const {
@@ -479,14 +568,17 @@ public:
 	}
 
 	void onLocationDel();
+	void onShipment(Shipment _shipment);
 	
 protected:
 	LocationReactor(Location *_loc, Engine* _owner) {
 		notifierIs(_loc);
 		owner_ = _owner;
+		injectActivity_ = NULL;
 	}
 
 	Fwk::Ptr<Engine> owner_;
+	InjectReactor::Ptr injectReactor_;
 };
 
 class SegmentReactor : public Segment::Notifiee {
@@ -501,16 +593,19 @@ public:
 	void onSegmentReturn();
 	void onSegmentExpedite();
 	void onSegmentDel(); 
+	void onShipment(Shipment _shipment);
 
 protected:
 	SegmentReactor(Segment* _seg, Engine* _owner) {
 		notifierIs(_seg);
 		owner_ = _owner;
+		forwardActivity_ = NULL;
 	}
 
 	Fwk::Ptr<Engine> owner_;
 	Location::Ptr prevSource_;
 	Segment::Ptr prevReturn_;
+	Activity::Ptr forwardActivity_;
 };
 
 class Path;
@@ -526,6 +621,8 @@ public:
     return m;	
 	}
 	~Engine();
+
+	static inline Activity::Manager::Ptr manager() { return manager_; }
 
 	Location::Ptr locationNew(const std::string& name, Location::LocationType locationType);
 	Segment::Ptr segmentNew(const std::string& name, Segment::SegmentType segmentType);
@@ -552,6 +649,12 @@ public:
 	std::vector<Fwk::Ptr<ConstrainedPath>> constrainedGraph(Location::Ptr _start, 
 		Segment::Expedite _expedite, Cost _maxCost, Mile _maxLength, Time maxTime);
 	std::vector<Fwk::Ptr<Path>> connections(Location::Ptr start, Location::Ptr end);
+
+	InjectReactor* injectorNew(Location::Ptr customer);
+	ForwardReactor* forwarderNew(Segment::Ptr segment);
+
+	// shipment routing helper function that consults the spanning tree graph
+	Segment::Ptr routeShipment(Shipment::Ptr shipment, Location::Ptr node);
 
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
@@ -601,6 +704,8 @@ protected:
 	Fleet::Ptr boatFleet_;
 	Fleet::Ptr planeFleet_;
 	Fleet::Ptr truckFleet_;	
+
+	Activity::Manager::Ptr manager_;
 
 	NotifieeConst *notifiee_;
   void newNotifiee( Engine::NotifieeConst * n ) const {

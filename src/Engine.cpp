@@ -6,12 +6,24 @@ using namespace std;
 using namespace Shipping;
 
 /******************************************************************************
+** Shipment Impl
+******************************************************************************/
+Shipment::Shipment(Location::Ptr _source, Location::Ptr _destination, Capacity _size) :
+  source_(_source),
+  destination(_destination),
+  size_(_size)
+{}
+
+/******************************************************************************
 ** Location Impl
 ******************************************************************************/
-Location::Location(const string& _name, LocationType _locType) {
-  locType_ = _locType;
-  name_ = _name;
-}
+Location::Location(const string& _name, LocationType _locType) :
+  locType_(_locType),
+  name_(_name),
+  shipmentRate_(MAX_CAPACITY),
+  shipmentSize_(MAX_CAPACITY),
+  shipmentDestination_(NULL)
+{}
 
 void
 Location::segmentAdd(Fwk::Ptr<Segment> _segment){
@@ -44,6 +56,39 @@ Location::segmentAtIndex(unsigned int _index){
 	return seg;
 }
 
+void
+Location::shipmentIs(Shipment::Ptr _shipment) {
+  if (notifiee_) try {
+    notifiee_->onShipment(_shipment);
+  } catch(...) { cerr << "notifiee exception caught during Location::shipmentIs" << endl; }
+}
+
+void
+shipmentRateIs(U32 _shipmentRate) {
+  shipmentRate_ = _shipmentRate;
+  if (notifiee_) try {
+    notifiee_->onShipmentAttr();
+  }
+}
+
+void
+shipmentSizeIs(Capacity _shipmentSize) {
+  shipmentSize_ = _shipmentSize;
+  if (notifiee_) try {
+    notifiee_->onShipmentAttr();
+  }
+}
+
+void
+shipmentDestinationIs(Location::Ptr _shipmentDestination) {
+  if (_shipmentDestination) {
+    shipmentDestination_ = _shipmentDestination;
+    if (notifiee_) try {
+      notifiee_->onShipmentAttr();
+    }
+  }
+}
+
 //----------| NotifieeConst Implementation |------------//
 
 Location::NotifieeConst::~NotifieeConst() {
@@ -66,11 +111,14 @@ Location::NotifieeConst::notifierIs(const Location::PtrConst& _notifier) {
 /******************************************************************************
 ** Segment Impl
 ******************************************************************************/
-Segment::Segment(const string& _name, SegmentType _segType){
-  segType_ = _segType;
-  name_ = _name;
-  expedite_ = Segment::unsupported();
-}
+static const int DEFAULT_SEGMENT_CAPACITY = 10;
+
+Segment::Segment(const string& _name, SegmentType _segType) :
+  segType_(_segType),
+  name_(_name),
+  expedite_(Segment::unsupported()),
+  capacity_(DEFAULT_SEGMENT_CAPACITY);
+{}
 
 void
 Segment::sourceIs(Location::Ptr _source){
@@ -110,6 +158,13 @@ Segment::expediteIs(Segment::Expedite _expedite) {
   } catch(...) { cerr << "notifiee exception caught during Segment::returnSegmentIs" << endl; }
 }
 
+void
+Segment::shipmentIs(Shipment::Ptr _shipment) {
+  if (notifiee_) try {
+    notifiee_->onShipment(_shipment);
+  } catch(...) { cerr << "notifiee exception caught during Segment::shipmentIs" << endl; }
+}
+
 //----------| NotifieeConst Implementation |------------//
 
 Segment::NotifieeConst::~NotifieeConst() {
@@ -142,6 +197,42 @@ LocationReactor::onLocationDel() {
   owner_->locationDel(notifier());
 }
 
+void
+LocationReactor::onShipmentAttr() {
+  if (injectReactor_) {
+    // inject activity exists so update its parameters
+    injectReactor_->shipmentRateIs(notifier_->shipmentRate());
+    injectReactor_->shipmentSizeIs(notifier_->shipmentSize());
+    injectReactor_->shipmentDestinationIs(notifier_->shipmentDestination());
+  } else if (readyToShip(notifier_)) {
+    // let Engine create & schedule new inject activity
+    injectReactor_ = owner_->injectorNew(notifier_);
+  }
+}
+
+bool
+readyToShip(Location::Ptr customer) {
+  return ( customer->shipmentRate() != MAX_CAPACITY &&
+           customer->shipmentSize() != MAX_CAPACITY &&
+           customer->shipmentDestination() != NULL );
+}
+
+void
+LocationReactor::onShipment(Shipment::Ptr _shipment) {
+  // check if the current location is the desination of the shipment
+  if (notifier->name() == _shipment->destination()->name()) {
+    // the shipment has been delivered, log some stats
+    // TODO
+    return;
+  } else {
+    // determine the next segment to forward the shipment along
+    Segment::Ptr nextSegment = owner_->nextNode(_shipment, notifier_);
+    // now put the shipment onto the segment and let the segment/reactor
+    // take care of creating and scheduling the forward activity
+    nextSegment_->shipmentIs(_shipment);
+  }
+}
+
 /******************************************************************************
 ** SegmentReactor Impl
 ******************************************************************************/
@@ -169,18 +260,34 @@ SegmentReactor::onSegmentDel() {
   owner_->segmentDel(notifier());
 }
 
+void SegmentReactor::onShipment(Shipment _shipment) {
+  // wraps the received shipment in a new ForwardActivity
+  // TODO:
+  injectReactor_ = owner_->injectorNew(notifier_);
+}
+
 /******************************************************************************
 ** Engine Impl
 ******************************************************************************/
-Engine::Engine(){
-	boatFleet_ = Fleet::FleetNew();
-	planeFleet_ = Fleet::FleetNew();
-	truckFleet_ = Fleet::FleetNew();
+Engine::Engine() :
+	boatFleet_(Fleet::FleetNew()),
+	planeFleet_(Fleet::FleetNew()),
+	truckFleet_(Fleet::FleetNew()),
+  manager_(activityManagerInstance())
+{
+  manager->engineIs(this);
 }
 
 Engine::~Engine(){
 
 }
+
+// Activity::Manager::Ptr managerNew(Activity::Manager::ManagerType _type) {
+//   Activity::Manager::Ptr mgr = Activity::Manager::activityManagerInstance(_type);
+//   if (!mgr) {
+//     throw Exception ("unable to create new activity manager in Engine::managerNew");
+//   }
+// }
 
 Location::Ptr
 Engine::locationNew(const std::string& name, Location::LocationType locationType){
@@ -317,6 +424,40 @@ Engine::handleSegmentExpedite( Segment::Ptr seg ) {
   if (notifiee_) {
     notifiee_->onSegmentExpedite(seg);
   }
+}
+
+//----------| Trampoline Activity Creation Methods |------------//
+InjectReactor*
+injectActivityNew(Location::Ptr customer) {
+  Shipment
+  Activity::Ptr injectActivity = manager_->activityNew();
+    // create new InjectReactor using InjectActivity (does Engine own it? if so, pass 'this' as owner)
+  // InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
+  InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
+  if (!reactor) {
+    throw Exception ("unable to create new inject reactor in Engine::injectorNew");
+  } 
+  return reactor;
+}
+
+ForwardReactor*
+forwardActivityNew(Location::Ptr customer) {
+  Shipment
+  Activity::Ptr injectActivity = manager_->activityNew();
+    // create new InjectReactor using InjectActivity (does Engine own it? if so, pass 'this' as owner)
+  // InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
+  InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
+  if (!reactor) {
+    throw Exception ("unable to create new inject reactor in Engine::injectorNew");
+  } 
+  return reactor;
+}
+
+// shipment routing helper function that consults the spanning tree graph
+Segment::Ptr
+Engine::routeShipment(Shipment::Ptr shipment, Location::Ptr node)
+{
+  // TODO
 }
 
 //----------| NotifieeConst Implementation |------------//
