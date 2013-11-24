@@ -13,154 +13,37 @@
 #include "Ptr.h"
 #include "PtrInterface.h"
 #include "Instance.h"
-#include "Activity.h"
+#include "ShippingTypes.h"
+// #include "Activity.h"
 
 namespace Shipping {
-
-#define MAX_BUF 64
-#define MAX_COST DBL_MAX
-#define MAX_MILE DBL_MAX
-#define MAX_SPEED DBL_MAX
-#define MAX_TIME DBL_MAX
-#define MAX_CAPACITY DBL_MAX
-
-class Exception {
-public:
-	Exception(char const * str) : what_(str) { }
-	Exception(std::string str) : what_(str) { }
-	std::string what() const { return what_; }
-  virtual ~Exception() { }
-protected:
-
-private:
-	std::string what_;
-};
 
 // TODO START
 // remove forward declarations from Activity.h
 class InjectActivity;
 class ForwardActivity;
-
 class InjectActivityReactor;
 class ForwardActivityReactor;
-
 // TODO END
 
-// ordinal types
-class Mile : public Ordinal<Mile, double> {
-public:
-	Mile(double num = 0.0) : Ordinal<Mile, double>(num) {
-		if (num < 0.0) {
-			std::ostringstream err;
-			err << "Mile value error: " << num;
-			throw Exception( err.str() );
-		}
-	}
-	std::string toString() { 
-		char buf[MAX_BUF];
-		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
-		return std::string(buf);
-	}
-	static Mile Max() { return Mile(MAX_MILE);	}
-};
-
-class Difficulty : public Ordinal<Difficulty, double> {
-public:
-	Difficulty(double num = 1.0) : Ordinal<Difficulty, double>(num) {
-		if (num < 1.0 || num > 5.0) {
-			std::ostringstream err;
-			err << "Difficulty value error: " << num;
-			throw Exception( err.str() );
-		}
-	}
-	std::string toString() { 
-		char buf[MAX_BUF];
-		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
-		return std::string(buf);
-	}
-};
-
-class Speed : public Ordinal<Speed, double> {
-public:
-	Speed(double num = 1.0) : Ordinal<Speed, double>(num) {
-		if (num <= 0.0) {
-			std::ostringstream err;
-			err << "Speed value error: " << num;
-			throw Exception( err.str() );
-		}
-	}
-	std::string toString() { 
-		char buf[MAX_BUF];
-		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
-		return std::string(buf);
-	}
-	static Speed Max() { return Speed(MAX_SPEED);	}
-};
-
-class Cost : public Ordinal<Cost, double> {
-public:
-	Cost(double num = 0.0) : Ordinal<Cost, double>(num) {
-		if (num < 0.0) {
-			std::ostringstream err;
-			err << "Cost value error: " << num;
-			throw Exception( err.str() );
-		}
-	}
-	std::string toString() { 
-		char buf[MAX_BUF] = {0};
-		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
-		return std::string(buf);
-	}
-	static Cost Max() { return Cost(MAX_COST);	}
-};
-
-class Capacity : public Ordinal<Capacity, int> {
-public:
-	Capacity(int num = 0) : Ordinal<Capacity, int>(num) {
-		if (num < 0) {
-			std::ostringstream err;
-			err << "Capacity value error: " << num;
-			throw Exception( err.str() );
-		}
-	}
-	std::string toString() { return std::to_string(value_); }
-};
-
-class Time : public Ordinal<Time, double> {
-public:
-	Time(double num = 0.0) : Ordinal<Time, double>(num) {
-		if (num < 0.0) {
-			std::ostringstream err;
-			err << "Time value error: " << num;
-			throw Exception( err.str() );
-		}
-	}
-	std::string toString() { 
-		char buf[MAX_BUF];
-		std::snprintf(buf, MAX_BUF-1, "%.2f", value_);
-		return std::string(buf);
-	}
-	static Time Max() { return Time(MAX_TIME);	}
-};
+class Location;
 
 class Shipment {
+public:
 	typedef Fwk::Ptr<Shipment const> PtrConst;
 	typedef Fwk::Ptr<Shipment> Ptr;
-
-public:
-
-	static inline Capacity size() { return size_; }
-	static inline Location::Ptr source() { return source_; }
-	static inline Location::Ptr destination() { return desination_; }
-	static inline Time startTime() { return startTime_; }
-	static inline Time finishTime() { return finishTime_; }
-	static inline Mile distance() { return distance_; }
-	static inline Cost cost() { return cost_; }
+  inline Capacity size() { return size_; }
+	inline Fwk::Ptr<Location> source() { return source_; }
+	inline Fwk::Ptr<Location> destination() { return destination_; }
+	inline Time startTime() { return startTime_; }
+	inline Time finishTime() { return finishTime_; }
+	inline Mile distance() { return distance_; }
+	inline Cost cost() { return cost_; }
 
 	void distanceIs(Mile _distance) { distance_ = _distance; }
 	void costIs(Cost _cost) { cost_ = _cost; }
 
-	static Shipment::Ptr Shipment(Location::Ptr _source, Location::Ptr _destination, 
+	static Shipment::Ptr ShipmentNew(Fwk::Ptr<Location> _source, Fwk::Ptr<Location> _destination, 
 		Capacity _size) {
 		Ptr m = new Shipment(_source, _destination, _size);
 		if (m == NULL) throw Exception ("failed to create new Shipment in Shipment::Shipment");
@@ -169,14 +52,14 @@ public:
 
 protected:
 	Capacity size_;
-	Location::Ptr source_;
-	Location::Ptr destination_;
+	Fwk::Ptr<Location> source_;
+	Fwk::Ptr<Location> destination_;
 	Time startTime_;	// TODO: should startTime be passed into constructor?
-	Time finishTime;
+	Time finishTime_;
 	Mile distance_;
 	Cost cost_;
 
-	Shipment(Location::Ptr _source, Location::Ptr _destination, _size);
+	Shipment(Fwk::Ptr<Location> _source, Fwk::Ptr<Location> _destination, Capacity _size);
 };
 
 class Segment; //Forward declaration for Location
@@ -217,17 +100,17 @@ public:
 	virtual Fwk::Ptr<Segment> segmentAtIndex(unsigned int _index);
 	void shipmentIs(Shipment::Ptr _shipment); // indicates that a shipment has arrived
 
-	static inline U32 shipmentRate() { return shipmentRate_; }
-	static inline Capacity shipmentSize() { return capacity_; }
-	static inline Location::Ptr shipmentDesination() { return shipmentDestination_; }
+	inline Capacity shipmentRate() { return shipmentRate_; }
+  inline Capacity shipmentSize() { return shipmentSize_; }
+	inline Location::Ptr shipmentDesination() { return shipmentDestination_; }
 
 	void shipmentRateIs(U32 _shipmentRate);
 	void shipmentSizeIs(Capacity _shipmentSize);
 	void shipmentDestinationIs(Location::Ptr _shipmentDestination);
 
-	static inline U32 shipmentsReceived() { return shipmentsReceived_; }
-	static inline Time shipmentsAvgLatency() { return shipmentsAvgLatency_; }
-	static inline Cost shipmentsTotalCost() { return shipmentsTotalCost_; }
+	inline U32 shipmentsReceived() { return shipmentsReceived_; }
+	inline Time shipmentsAvgLatency() { return shipmentsAvgLatency_; }
+	inline Cost shipmentsTotalCost() { return shipmentsTotalCost_; }
 
 	void shipmentsReceivedIs(U32 _shipmentsReceived) { shipmentsReceived_ = _shipmentsReceived; }
 	void shipmentsAvgLatencyIs(Time _shipmentsAvgLatency) { shipmentsAvgLatency_ = _shipmentsAvgLatency; }
@@ -417,6 +300,13 @@ public:
 	void difficultyIs(Difficulty _diff) { diff_ = _diff; }
 	inline Expedite expedite() const { return expedite_; }
 	void expediteIs(Expedite _expedite);
+
+	inline U32 shipmentsReceived() { return shipmentsReceived_; }
+	inline U32 shipmentsRefused() { return shipmentsRefused_; }
+	inline Capacity capacity() { return capacity_; }
+	void shipmentsReceivedIs(U32 _shipmentsReceived) { shipmentsReceived_ = _shipmentsReceived; }
+	void shipmentsRefusedIs(U32 _shipmentsRefused) { shipmentsRefused_ = _shipmentsRefused; }
+	void capacityIs(Capacity _capacity) { capacity_ = _capacity; }
 
 	// indicates that a shipment has arrived on this segment
 	void shipmentIs(Shipment _shipment);

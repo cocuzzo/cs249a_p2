@@ -64,7 +64,7 @@ Location::shipmentIs(Shipment::Ptr _shipment) {
 }
 
 void
-shipmentRateIs(U32 _shipmentRate) {
+Location::shipmentRateIs(U32 _shipmentRate) {
   shipmentRate_ = _shipmentRate;
   if (notifiee_) try {
     notifiee_->onShipmentAttr();
@@ -72,7 +72,7 @@ shipmentRateIs(U32 _shipmentRate) {
 }
 
 void
-shipmentSizeIs(Capacity _shipmentSize) {
+Location::shipmentSizeIs(Capacity _shipmentSize) {
   shipmentSize_ = _shipmentSize;
   if (notifiee_) try {
     notifiee_->onShipmentAttr();
@@ -80,7 +80,7 @@ shipmentSizeIs(Capacity _shipmentSize) {
 }
 
 void
-shipmentDestinationIs(Location::Ptr _shipmentDestination) {
+Location::shipmentDestinationIs(Location::Ptr _shipmentDestination) {
   if (_shipmentDestination) {
     shipmentDestination_ = _shipmentDestination;
     if (notifiee_) try {
@@ -261,9 +261,10 @@ SegmentReactor::onSegmentDel() {
 }
 
 void SegmentReactor::onShipment(Shipment _shipment) {
-  // wraps the received shipment in a new ForwardActivity
-  // TODO:
-  injectReactor_ = owner_->injectorNew(notifier_);
+  // create new forwarding reactor for this shipment
+  forwardReactor_ = owner_->forwardActivityNew(_shipment);
+
+
 }
 
 /******************************************************************************
@@ -427,28 +428,26 @@ Engine::handleSegmentExpedite( Segment::Ptr seg ) {
 }
 
 //----------| Trampoline Activity Creation Methods |------------//
-InjectReactor*
+InjectActivityReactor*
 injectActivityNew(Location::Ptr customer) {
-  Shipment
   Activity::Ptr injectActivity = manager_->activityNew();
     // create new InjectReactor using InjectActivity (does Engine own it? if so, pass 'this' as owner)
   // InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
-  InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
+  InjectReactor *reactor = InjectActivityReactor::InjectActivityReactorIs(injectActivity.ptr(), this);
   if (!reactor) {
-    throw Exception ("unable to create new inject reactor in Engine::injectorNew");
+    throw Exception ("unable to create new inject reactor in Engine::injectActivityNew");
   } 
   return reactor;
 }
 
-ForwardReactor*
-forwardActivityNew(Location::Ptr customer) {
-  Shipment
-  Activity::Ptr injectActivity = manager_->activityNew();
-    // create new InjectReactor using InjectActivity (does Engine own it? if so, pass 'this' as owner)
-  // InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
-  InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
+ForwardActivityReactor*
+forwardActivityNew(Shipment::Ptr shipment) {
+  // create new ForwardActivity around the shipment
+  Activity::Ptr forwardActivity = manager_->activityNew();
+  // create new ForwardActivityReactor to schedule the ForwardActivity
+  ForwardActivityReactor *reactor = ForwardActivityReactor::ForwardActivityReactorIs(forwardActivity.ptr(), this);
   if (!reactor) {
-    throw Exception ("unable to create new inject reactor in Engine::injectorNew");
+    throw Exception ("unable to create new inject reactor in Engine::forwardActivityNew");
   } 
   return reactor;
 }

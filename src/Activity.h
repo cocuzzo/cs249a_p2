@@ -8,6 +8,7 @@
 
 #include "Nominal.h"
 #include "Notifiee.h"
+// #include "ShippingTypes.h"
 
 using std::string;
 
@@ -35,8 +36,8 @@ class Activity : public Fwk::PtrInterface<Activity> {
     virtual Status status() const = 0;
     virtual void statusIs(Status s)  = 0;
     
-    virtual Time nextTime() const = 0;
-    virtual void nextTimeIs(Time t) = 0;
+    virtual Shipping::Time nextTime() const = 0;
+    virtual void nextTimeIs(Shipping::Time t) = 0;
 
     virtual Fwk::Ptr<Notifiee> notifiee() const = 0;
 
@@ -66,7 +67,7 @@ class Activity::Manager : public Fwk::PtrInterface<Activity::Manager> {
 		virtual ActivityTime activityTime() = 0;
 		virtual void activityTimeIs(ActivityTime _activityTime) = 0;
 		
-		virtual void engineIs(Fwk::Ptr<class PtrInterface<Engine> > _engine) = 0;
+		virtual void engineIs(Fwk::Ptr<class PtrInterface<Shipping::Engine> > _engine) = 0;
 		
 		virtual Fwk::Ptr<Activity> activityNew(const string &name) = 0;
 		
@@ -76,8 +77,8 @@ class Activity::Manager : public Fwk::PtrInterface<Activity::Manager> {
 		
 		virtual void lastActivityIs(Activity::Ptr) = 0;
 		
-		virtual Time now() const = 0;
-		virtual void nowIs(Time) = 0;
+		virtual Shipping::Time now() const = 0;
+		virtual void nowIs(Shipping::Time) = 0;
 
 	private:
     /* Up to you */
