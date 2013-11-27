@@ -451,14 +451,50 @@ string LocationRep::attribute(const string& name) {
 	string response;
 	try{	
 		if(loc_ == NULL) throw Exception( string("Error: Trying to access deleted instance") );
+		
 		int index = segmentNumber(name);
-		if(index == -1) throw string("Error: Invalid attribute => " + name);
-		//index into vector starts at 0, client will start at 1
-		Segment::Ptr seg = loc_->segmentAtIndex(index - 1);
-		if(NULL == seg){
-			throw Exception( string("Error: Invalid segment number ") );
+		if(index != -1){ 
+			//index into vector starts at 0, client will start at 1
+			Segment::Ptr seg = loc_->segmentAtIndex(index - 1);
+			if(NULL == seg){
+				throw Exception( string("Error: Invalid segment number ") );
+			}
+			response = seg->name();
 		}
-		response = seg->name();
+		else if("transfer rate" == name){
+			if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
+			Capacity rate = loc_->shipmentRate();
+			response = rate.toString();
+		}
+		else if("shipment size" == name){
+			if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
+			Capacity size = loc_->shipmentSize();
+			response = size.toString();
+		}
+		else if("destination" == name){
+			if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
+			Customer::Ptr dest = loc_->shipmentDestination();
+			if(dest) response = dest->name();
+		}
+		else if("shipments received" == name){
+			if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
+			Capacity recvd = loc_->shipmentsReceived();
+			response = recvd.toString();
+		}
+		else if("average latency" == name){
+			if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
+			Capacity avgLat = loc_->shipmentsAvgLatency();
+			response = avgLat.toString();
+		}
+		else if("total cost" == name){
+			if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
+			Cost cost = loc_->shipmentsTotalCost();
+			response = cost.toString();
+		}
+		else{
+			throw Exception( string("Error: Invalid attribute => " + name) );
+		}
+		
 	}//end try block
 	catch(Exception& e){
 		cerr << e.what() << endl;
@@ -468,7 +504,32 @@ string LocationRep::attribute(const string& name) {
 
 
 void LocationRep::attributeIs(const string& name, const string& v) {
-   //nothing to do, has no writable attributes
+   try{	
+		if(loc_ == NULL) throw Exception( string("Error: Trying to access deleted instance") );
+		if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
+		
+		if("transfer rate" == name){
+			Capacity rate( atoi(v.c_str()) );
+			loc_->shipmentRateIs(rate);
+		}
+		else if("shipment size" == name){
+			Capacity size( atoi(v.c_str()) );
+			loc_->shipmentSizeIs(size);
+		}
+		else if("destination" == name){
+			Engine::Ptr eng = manager_->engine();
+			Location::Ptr dest = eng->location(v);
+			if(NULL == dest) throw Exception( string("Error: Invalid dest name => " + v) );
+			if(Location::customerLoc() != dest->locationType()) throw Exception( string("Error: Destination " + v + " is not a Customer") );
+			loc_->shipmentDestinationIs(dest);
+		}
+		else{
+			throw Exception( string("Error: Invalid attribute => " + name) );
+		}
+	}//end try block
+	catch(Exception& e){
+		cerr << e.what() << endl;
+	}//end catch block
 }
 
 static const string segmentStr = "segment";
