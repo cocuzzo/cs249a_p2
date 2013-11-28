@@ -814,3 +814,67 @@ ConstrainedPath::segmentAdd(Segment::Ptr _segment) {
   // now let the Path class determine if this Segment can be added
   return path_->segmentAdd(_segment);
 }
+
+/******************************************************************************
+** InjectActivityReactor Impl
+******************************************************************************/
+
+void InjectActivityReactor::onStatus() {
+	ActivityImpl::ManagerImpl::Ptr managerImpl = Fwk::ptr_cast<ActivityImpl::ManagerImpl>(manager_);
+	switch (activity_->status()) {
+
+		case Activity::executing:
+			//Do the injection...
+			
+			break;
+	
+		case Activity::free:
+			//when done, automatically enqueue myself for next execution
+			activity_->nextTimeIs(Time(activity_->nextTime().value() + CALCULATE_RATE));
+			activity_->statusIs(Activity::nextTimeScheduled);
+			break;
+
+		case Activity::nextTimeScheduled:
+			//add myself to be scheduled
+			manager_->lastActivityIs(activity_);
+			break;
+
+		default:
+			break;
+	}
+
+}
+
+
+/******************************************************************************
+** ForwardActivityReactor Impl
+******************************************************************************/
+
+void ForwardActivityReactor::onStatus() {
+	ActivityImpl::ManagerImpl::Ptr managerImpl = Fwk::ptr_cast<ActivityImpl::ManagerImpl>(manager_);
+/*	
+	switch (activity_->status()) {
+
+		case Activity::executing:
+			//Do the forwarding...
+			
+			break;
+	
+		case Activity::free:
+			//when done, automatically enqueue myself for next execution
+			activity_->nextTimeIs(Time(activity_->nextTime().value() + CALCULATE_RATE));
+			activity_->statusIs(Activity::nextTimeScheduled);
+			break;
+
+		case Activity::nextTimeScheduled:
+			//add myself to be scheduled
+			manager_->lastActivityIs(activity_);
+			break;
+
+		default:
+			break;
+	}
+*/
+}
+
+

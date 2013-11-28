@@ -747,6 +747,41 @@ protected:
 	U32 expediteSegments_;
 };
 
+class InjectActivityReactor : public Activity::Notifee {
+public:
+
+	void onNextTime();
+	void onStatus();
+	
+	InjectActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
+			 activity, Location::Ptr loc) 
+     : Notifiee(activity), injectLoc_(loc), activity_(activity), manager_(manager) {}
+	
+protected:
+	Location::Ptr injectLoc_;
+	Activity::Ptr activity_;
+	Fwk::Ptr<Activity::Manager> manager_;
+	
+};
+
+class ForwardActivityReactor : public Activity::Notifee {
+public:
+
+	void onNextTime();
+	void onStatus();
+	
+	ForwardActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
+			 activity, Shipment::Ptr shipment) 
+     : Notifiee(activity), shipment_(shipment), activity_(activity), manager_(manager) {}
+	
+protected:
+	Shipment::Ptr shipment_;
+	Activity::Ptr activity_;
+	Fwk::Ptr<Activity::Manager> manager_;
+
+};
+
+
 } /* end shipping namespace */
 
 #endif
