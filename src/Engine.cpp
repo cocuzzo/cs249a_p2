@@ -429,17 +429,15 @@ Engine::handleSegmentExpedite( Segment::Ptr seg ) {
 //----------| Trampoline Activity Creation Methods |------------//
 InjectActivityReactor*
 Engine::injectActivityNew(Location::Ptr _customer) {
-/* TODO
-  Activity::Ptr injectActivity = manager_->activityNew();
-    // create new InjectReactor using InjectActivity (does Engine own it? if so, pass 'this' as owner)
-  // InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
-  InjectReactor *reactor = InjectActivityReactor::InjectActivityReactorIs(injectActivity.ptr(), this);
+
+  Activity::Ptr injectActivity = manager_->activityNew(string(_customer->name() + "_injectActivity"));
+  InjectActivityReactor* reactor = new InjectActivityReactor(manager_, injectActivity.ptr(), _customer);
   if (!reactor) {
     throw Exception ("unable to create new inject reactor in Engine::injectActivityNew");
   } 
+  injectActivity->lastNotifieeIs(reactor);
+  injectActivity->statusIs(Activity::nextTimeScheduled);
   return reactor;
-*/
-return NULL; //Placeholder
 }
 
 ForwardActivityReactor*
@@ -862,6 +860,7 @@ void InjectActivityReactor::onStatus() {
 
 }
 
+void InjectActivityReactor::onNextTime() { }
 
 /******************************************************************************
 ** ForwardActivityReactor Impl
@@ -902,4 +901,4 @@ void ForwardActivityReactor::onStatus() {
 */
 }
 
-
+void ForwardActivityReactor::onNextTime() { }

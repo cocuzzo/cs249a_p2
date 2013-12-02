@@ -38,7 +38,7 @@ COMPILER_FLAGS += -g -Wall -std=c++0x
 FILES += InstanceTest
 
 #$(SRC_PATH)/Instance.o 
-LIBS = $(SRC_PATH)Engine.o
+LIBS = $(SRC_PATH)Engine.o $(SRC_PATH)ActivityImpl.o
 
 # This is a list of object files.
 OBJS = $(addsuffix .o, $(FILES))

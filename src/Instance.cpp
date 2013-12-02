@@ -66,7 +66,7 @@ public:
 		loc_ = eng->locationNew(name, type);
 	}
 	
-	~LocationRep(); //PEO
+	~LocationRep(); 
 	
 	// Instance method
 	string attribute(const string& name);
@@ -577,6 +577,18 @@ string SegmentRep::attribute(const string& name){
 			Segment::Expedite exp = seg_->expedite();
 			response = (Segment::supported() == exp) ? "yes" : "no";
 		}
+		else if("shipments received" == name){
+			Capacity received = seg_->shipmentsReceived();
+			response = received.toString();
+		}
+		else if("shipments refused" == name){
+			Capacity refused = seg_->shipmentsRefused();
+			response = refused.toString();
+		}
+		else if("capacity" == name){
+			Capacity cap = seg_->capacity();
+			response = cap.toString();
+		}
 		else{
 			throw Exception( string("Error: Invalid attribute => " + name) );
 		}
@@ -631,6 +643,10 @@ void SegmentRep::attributeIs(const string& name, const string& v){
 			else{
 				throw Exception( string("Error: Invalid expedite value " + v) );
 			}
+		}
+		else if("capacity" == name){
+			Capacity cap( atoi(v.c_str()) );
+			seg_->capacityIs(cap);
 		}
 		else{
 			throw Exception( string("Error: Invalid attribute => " + name) );

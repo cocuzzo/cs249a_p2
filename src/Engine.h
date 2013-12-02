@@ -305,11 +305,9 @@ public:
 	inline Expedite expedite() const { return expedite_; }
 	void expediteIs(Expedite _expedite);
 
-	inline U32 shipmentsReceived() const { return shipmentsReceived_; }
-	inline U32 shipmentsRefused() const { return shipmentsRefused_; }
+	inline Capacity shipmentsReceived() const { return shipmentsReceived_; }
+	inline Capacity shipmentsRefused() const { return shipmentsRefused_; }
 	inline Capacity capacity() { return capacity_; }
-	void shipmentsReceivedIs(U32 _shipmentsReceived) { shipmentsReceived_ = _shipmentsReceived; }
-	void shipmentsRefusedIs(U32 _shipmentsRefused) { shipmentsRefused_ = _shipmentsRefused; }
 	void capacityIs(Capacity _capacity) { capacity_ = _capacity; }
 
 	// indicates that a shipment has arrived on this segment
@@ -368,8 +366,8 @@ protected:
 	Expedite expedite_;
 
 	// stats for shipments
-	U32 shipmentsReceived_;
-	U32 shipmentsRefused_;
+	Capacity shipmentsReceived_;
+	Capacity shipmentsRefused_;
 	Capacity capacity_;
 
 	NotifieeConst *notifiee_;
@@ -461,6 +459,8 @@ public:
 	InjectActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
 			 activity, Location::Ptr loc) 
      : Notifiee(activity), injectLoc_(loc), activity_(activity), manager_(manager) {}
+     
+	~InjectActivityReactor(){}
 	
 protected:
 	Location::Ptr injectLoc_;
@@ -478,6 +478,8 @@ public:
 	ForwardActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
 			 activity, Shipment::Ptr shipment) 
      : Notifiee(activity), shipment_(shipment), activity_(activity), manager_(manager) {}
+	
+	~ForwardActivityReactor(){}
 	
 protected:
 	Shipment::Ptr shipment_;

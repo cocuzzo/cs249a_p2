@@ -775,9 +775,9 @@ void testSingletons() {
     } catch (...) {
     }
 
-    Ptr<Instance> conn1 = m->instanceNew("conn1", "Fleet");
+    Ptr<Instance> conn1 = m->instanceNew("conn1", "Conn");
     try {
-        Ptr<Instance> conn2 = m->instanceNew("conn2", "Fleet");
+        Ptr<Instance> conn2 = m->instanceNew("conn2", "Conn");
         ASSERT(conn1 == conn2 || !conn2);
     } catch (...) {
     }
