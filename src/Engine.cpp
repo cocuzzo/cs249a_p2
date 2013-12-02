@@ -457,10 +457,24 @@ return NULL; //Placeholder
 
 // shipment routing helper function that consults the spanning tree graph
 Segment::Ptr
-Engine::routeShipment(Shipment::Ptr shipment, Location::Ptr node)
+Engine::routeShipment(Shipment::Ptr shipment, Location::Ptr destination)
 {
-  // TODO
-  return Segment::Ptr(NULL); //placeholder
+  if (routingTable_.empty()) {
+    // construct the routing table for the first time
+    // assumes that the graph has at least 2 connected locations (not degenerate)
+    Engine::generateRoutingTable(Engine::minCost());
+  }
+
+  Location::Ptr source = shipment->source();
+  Segment::Ptr seg;
+  string key = source->name() + "-" + destination->name();
+  auto it = routingTable_.find(key);
+  if (it != routingTable_.end()) {
+    seg = it->second;
+  } else {
+    seg = Segment::Ptr(NULL);
+  }
+  return seg;
 }
 
 //----------| NotifieeConst Implementation |------------//
@@ -594,7 +608,6 @@ Engine::connections(Location::Ptr start, Location::Ptr end){
 	return results;
 }
 
-//----------| Protected Implementation |------------//
 static const double kExpeditedRateCost = 1.5;
 Cost
 Engine::segmentCost(Segment::Ptr _seg, Segment::Expedite _expedite) {
@@ -642,6 +655,78 @@ Engine::segmentTime(Segment::Ptr _seg, Segment::Expedite _expedite) {
   return segmentTime;
 }
 
+//----------| Protected Implementation |------------//
+// construct the routing table for routing shipments
+// called just before simulation time starts running
+void
+Engine::generateRoutingTable(Engine::RoutingHeuristic _heuristic) {
+/*
+for each location i
+  for each location j
+    compute paths from i to j
+    if paths not empty
+      choose shortest path based on heuristic
+      extract first segment s
+      add entry to routing table: (<i,j>,s)
+*/
+  for (auto pair_i  : locReactors_) {
+    for (auto pair_j : locReactors_) {
+      LocationReactor::Ptr reactor_i = pair_i.second;
+      LocationReactor::Ptr reactor_j = pair_j.second;
+      Location::Ptr i = reactor_i->notifier();
+      Location::Ptr j = reactor_j->notifier();
+      if (i->name() != j->name()) {
+        vector<Path::Ptr> paths = connections(i, j);
+        if (!paths.empty()) {
+          Path::Ptr bestPath = paths.front();
+          switch (_heuristic) {
+            case minCost_: // find path with min cost
+            {
+              Cost minCost = MAX_COST;
+              for (Path::Ptr p : paths) {
+                if (p->cost() < minCost) {
+                  bestPath = p;
+                  minCost = p->cost();
+                }
+              }
+              break;
+            }
+            case minLength_: // find path with min dist
+            {
+              Mile minLength = MAX_MILE;
+              for (Path::Ptr p : paths) {
+                if (p->length() < minLength) {
+                  bestPath = p;
+                  minLength = p->length();
+                }
+              }
+              break;
+            }
+            case minTime_: // find path with min time
+            {
+              Time minTime = MAX_TIME;
+              for (Path::Ptr p : paths) {
+                if (p->time() < minTime) {
+                  bestPath = p;
+                  minTime = p->time();
+                }
+              }
+              break;
+            }
+            default:
+            {
+              throw Exception("invalid RoutingHeuristic specified in generateRoutingTable");
+              break;
+            }
+          }
+          Segment::Ptr s = bestPath->segments().front();
+          string key = i->name() + "-" + j->name();
+          routingTable_.insert(make_pair(key, s));
+        } 
+      }
+    }
+  }
+}
 
 /******************************************************************************
 ** Stats Impl

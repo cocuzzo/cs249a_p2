@@ -556,6 +556,16 @@ public:
 	}
 	~Engine();
 
+	enum RoutingHeuristic {
+		minCost_ = 0,
+		minLength_ = 1,
+		minTime_ = 2
+	};
+
+	static inline RoutingHeuristic minCost() { return minCost_; }
+	static inline RoutingHeuristic minLength() { return minLength_; }
+	static inline RoutingHeuristic minTime() { return minTime_; }
+
 	inline Activity::Manager::Ptr manager() { return manager_; }
 
 	Location::Ptr locationNew(const std::string& name, Location::LocationType locationType);
@@ -588,7 +598,7 @@ public:
 	ForwardActivityReactor* forwardActivityNew(Shipment::Ptr _shipment);
 
 	// shipment routing helper function that consults the spanning tree graph
-	Segment::Ptr routeShipment(Shipment::Ptr shipment, Location::Ptr node);
+	Segment::Ptr routeShipment(Shipment::Ptr shipment, Location::Ptr destination);
 
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
@@ -635,11 +645,18 @@ protected:
 	
 	std::map<std::string, LocationReactor::Ptr> locReactors_;
 	std::map<std::string, SegmentReactor::Ptr> segReactors_;
+
+	std::map<std::string, Segment::Ptr> routingTable_;
+
 	Fleet::Ptr boatFleet_;
 	Fleet::Ptr planeFleet_;
 	Fleet::Ptr truckFleet_;	
 
 	Activity::Manager::Ptr manager_;
+
+  // construct the routing table for routing shipments
+	// called just before simulation time starts running
+	void generateRoutingTable(Engine::RoutingHeuristic _heuristic);
 
 	NotifieeConst *notifiee_;
   void newNotifiee( Engine::NotifieeConst * n ) const {
