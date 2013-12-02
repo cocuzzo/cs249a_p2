@@ -2,8 +2,10 @@
 #define SHIPPING_TYPES_H
 
 #include <string>
+#include <sstream>
+#include <cfloat>
 #include "Nominal.h"
-// #include "Types.h"
+#include "Types.h"
 
 namespace Shipping {
 

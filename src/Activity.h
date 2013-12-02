@@ -8,7 +8,7 @@
 
 #include "Nominal.h"
 #include "Notifiee.h"
-// #include "ShippingTypes.h"
+#include "ShippingTypes.h"
 
 using std::string;
 
@@ -66,8 +66,6 @@ class Activity::Manager : public Fwk::PtrInterface<Activity::Manager> {
 		
 		virtual ActivityTime activityTime() = 0;
 		virtual void activityTimeIs(ActivityTime _activityTime) = 0;
-		
-		virtual void engineIs(Fwk::Ptr<class PtrInterface<Shipping::Engine> > _engine) = 0;
 		
 		virtual Fwk::Ptr<Activity> activityNew(const string &name) = 0;
 		

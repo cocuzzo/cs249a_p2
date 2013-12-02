@@ -3,6 +3,7 @@
 
 #include "ActivityImpl.h"
 
+using namespace std;
 
 Fwk::Ptr<Activity::Manager> activityManagerInstance() {
     return ActivityImpl::ManagerImpl::activityManagerInstance();
@@ -52,7 +53,7 @@ void ManagerImpl::lastActivityIs(Activity::Ptr activity) {
 	scheduledActivities_.push(activity);
 }
 
-void ManagerImpl::nowIs(Time t) {
+void ManagerImpl::nowIs(Shipping::Time t) {
 	//find the most recent activites to run and run them in order
 	while (!scheduledActivities_.empty()) {
 	    
@@ -67,7 +68,7 @@ void ManagerImpl::nowIs(Time t) {
 		
 		if(activityTime_ == realTime()){
 			//calculate amount of time to sleep
-			Time diff = Time(nextToRun->nextTime().value() - now_.value());
+			Shipping::Time diff = Shipping::Time(nextToRun->nextTime().value() - now_.value());
 			//sleep 100ms (100,000 microseconds) for every unit of time
 			usleep(( ((int)diff.value()) * 100000));
 		}

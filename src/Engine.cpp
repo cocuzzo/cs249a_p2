@@ -9,9 +9,9 @@ using namespace Shipping;
 ** Shipment Impl
 ******************************************************************************/
 Shipment::Shipment(Location::Ptr _source, Location::Ptr _destination, Capacity _size) :
+  size_(_size),
   source_(_source),
-  destination(_destination),
-  size_(_size)
+  destination_(_destination)
 {}
 
 /******************************************************************************
@@ -19,10 +19,7 @@ Shipment::Shipment(Location::Ptr _source, Location::Ptr _destination, Capacity _
 ******************************************************************************/
 Location::Location(const string& _name, LocationType _locType) :
   locType_(_locType),
-  name_(_name),
-  shipmentRate_(MAX_CAPACITY),
-  shipmentSize_(MAX_CAPACITY),
-  shipmentDestination_(NULL)
+  name_(_name)
 {}
 
 void
@@ -64,11 +61,11 @@ Location::shipmentIs(Shipment::Ptr _shipment) {
 }
 
 void
-Location::shipmentRateIs(U32 _shipmentRate) {
+Location::shipmentRateIs(Capacity _shipmentRate) {
   shipmentRate_ = _shipmentRate;
   if (notifiee_) try {
     notifiee_->onShipmentAttr();
-  }
+  } catch(...) { cerr << "notifiee exception caught during Location::shipmentRateIs" << endl; }
 }
 
 void
@@ -76,7 +73,7 @@ Location::shipmentSizeIs(Capacity _shipmentSize) {
   shipmentSize_ = _shipmentSize;
   if (notifiee_) try {
     notifiee_->onShipmentAttr();
-  }
+  } catch(...) { cerr << "notifiee exception caught during Location::shipmentSizeIs" << endl; }
 }
 
 void
@@ -85,7 +82,7 @@ Location::shipmentDestinationIs(Location::Ptr _shipmentDestination) {
     shipmentDestination_ = _shipmentDestination;
     if (notifiee_) try {
       notifiee_->onShipmentAttr();
-    }
+    } catch(...) { cerr << "notifiee exception caught during Location::shipmentDestinationIs" << endl; }
   }
 }
 
@@ -117,7 +114,7 @@ Segment::Segment(const string& _name, SegmentType _segType) :
   segType_(_segType),
   name_(_name),
   expedite_(Segment::unsupported()),
-  capacity_(DEFAULT_SEGMENT_CAPACITY);
+  capacity_(DEFAULT_SEGMENT_CAPACITY)
 {}
 
 void
@@ -201,24 +198,27 @@ void
 LocationReactor::onShipmentAttr() {
   if (injectReactor_) {
     // inject activity exists so update its parameters
+    /*
     injectReactor_->shipmentRateIs(notifier_->shipmentRate());
     injectReactor_->shipmentSizeIs(notifier_->shipmentSize());
     injectReactor_->shipmentDestinationIs(notifier_->shipmentDestination());
-  } else if (readyToShip(notifier_)) {
+    */
+  } else if (readyToShip()) {
     // let Engine create & schedule new inject activity
-    injectReactor_ = owner_->injectorNew(notifier_);
+    injectReactor_ = owner_->injectActivityNew(notifier());
   }
 }
 
 bool
-readyToShip(Location::Ptr customer) {
-  return ( customer->shipmentRate() != MAX_CAPACITY &&
-           customer->shipmentSize() != MAX_CAPACITY &&
-           customer->shipmentDestination() != NULL );
+LocationReactor::readyToShip() {
+  return ( notifier_->shipmentRate() != Capacity(0) &&
+           notifier_->shipmentSize() != Capacity(0) &&
+           notifier_->shipmentDestination() != NULL );
 }
 
 void
 LocationReactor::onShipment(Shipment::Ptr _shipment) {
+/*
   // check if the current location is the desination of the shipment
   if (notifier->name() == _shipment->destination()->name()) {
     // the shipment has been delivered, log some stats
@@ -231,6 +231,8 @@ LocationReactor::onShipment(Shipment::Ptr _shipment) {
     // take care of creating and scheduling the forward activity
     nextSegment_->shipmentIs(_shipment);
   }
+*/  
+  
 }
 
 /******************************************************************************
@@ -260,10 +262,9 @@ SegmentReactor::onSegmentDel() {
   owner_->segmentDel(notifier());
 }
 
-void SegmentReactor::onShipment(Shipment _shipment) {
+void SegmentReactor::onShipment(Shipment::Ptr _shipment) {
   // create new forwarding reactor for this shipment
-  forwardReactor_ = owner_->forwardActivityNew(_shipment);
-
+  forwardReactors_.push_back(owner_->forwardActivityNew(_shipment));
 
 }
 
@@ -275,9 +276,7 @@ Engine::Engine() :
 	planeFleet_(Fleet::FleetNew()),
 	truckFleet_(Fleet::FleetNew()),
   manager_(activityManagerInstance())
-{
-  manager->engineIs(this);
-}
+{}
 
 Engine::~Engine(){
 
@@ -429,7 +428,8 @@ Engine::handleSegmentExpedite( Segment::Ptr seg ) {
 
 //----------| Trampoline Activity Creation Methods |------------//
 InjectActivityReactor*
-injectActivityNew(Location::Ptr customer) {
+Engine::injectActivityNew(Location::Ptr _customer) {
+/* TODO
   Activity::Ptr injectActivity = manager_->activityNew();
     // create new InjectReactor using InjectActivity (does Engine own it? if so, pass 'this' as owner)
   // InjectReactor *reactor = InjectReactor::InjectReactorIs(injectActivity.ptr(), this);
@@ -438,10 +438,13 @@ injectActivityNew(Location::Ptr customer) {
     throw Exception ("unable to create new inject reactor in Engine::injectActivityNew");
   } 
   return reactor;
+*/
+return NULL; //Placeholder
 }
 
 ForwardActivityReactor*
-forwardActivityNew(Shipment::Ptr shipment) {
+Engine::forwardActivityNew(Shipment::Ptr _shipment) {
+/* TODO
   // create new ForwardActivity around the shipment
   Activity::Ptr forwardActivity = manager_->activityNew();
   // create new ForwardActivityReactor to schedule the ForwardActivity
@@ -450,6 +453,8 @@ forwardActivityNew(Shipment::Ptr shipment) {
     throw Exception ("unable to create new inject reactor in Engine::forwardActivityNew");
   } 
   return reactor;
+*/
+return NULL; //Placeholder
 }
 
 // shipment routing helper function that consults the spanning tree graph
@@ -457,6 +462,7 @@ Segment::Ptr
 Engine::routeShipment(Shipment::Ptr shipment, Location::Ptr node)
 {
   // TODO
+  return Segment::Ptr(NULL); //placeholder
 }
 
 //----------| NotifieeConst Implementation |------------//
@@ -820,27 +826,38 @@ ConstrainedPath::segmentAdd(Segment::Ptr _segment) {
 ******************************************************************************/
 
 void InjectActivityReactor::onStatus() {
-	ActivityImpl::ManagerImpl::Ptr managerImpl = Fwk::ptr_cast<ActivityImpl::ManagerImpl>(manager_);
 	switch (activity_->status()) {
 
 		case Activity::executing:
-			//Do the injection...
-			
-			break;
+			{
+				//Do the injection...
+				Shipment::Ptr newShipment = Shipment::ShipmentNew(injectLoc_, 
+																													injectLoc_->shipmentDestination(), 
+																													injectLoc_->shipmentSize());
+				injectLoc_->shipmentIs(newShipment);
+				break;
+			}
 	
 		case Activity::free:
-			//when done, automatically enqueue myself for next execution
-			activity_->nextTimeIs(Time(activity_->nextTime().value() + CALCULATE_RATE));
-			activity_->statusIs(Activity::nextTimeScheduled);
-			break;
+			{
+				//when done, automatically enqueue myself for next execution
+				activity_->nextTimeIs(Time(activity_->nextTime().value() + 24.0/(injectLoc_->shipmentRate().value()) ));
+				activity_->statusIs(Activity::nextTimeScheduled);
+				break;
+			}
 
 		case Activity::nextTimeScheduled:
-			//add myself to be scheduled
-			manager_->lastActivityIs(activity_);
-			break;
+			{
+				//add myself to be scheduled
+				manager_->lastActivityIs(activity_);
+				break;
+			}
 
 		default:
-			break;
+			{
+				break;
+			}
+			
 	}
 
 }
@@ -851,28 +868,36 @@ void InjectActivityReactor::onStatus() {
 ******************************************************************************/
 
 void ForwardActivityReactor::onStatus() {
-	ActivityImpl::ManagerImpl::Ptr managerImpl = Fwk::ptr_cast<ActivityImpl::ManagerImpl>(manager_);
 /*	
 	switch (activity_->status()) {
 
 		case Activity::executing:
+		{
 			//Do the forwarding...
 			
 			break;
+		}
 	
 		case Activity::free:
+		{
 			//when done, automatically enqueue myself for next execution
 			activity_->nextTimeIs(Time(activity_->nextTime().value() + CALCULATE_RATE));
 			activity_->statusIs(Activity::nextTimeScheduled);
 			break;
+		}
 
 		case Activity::nextTimeScheduled:
+		{
 			//add myself to be scheduled
 			manager_->lastActivityIs(activity_);
 			break;
+		}
 
 		default:
+		{
 			break;
+		}
+		
 	}
 */
 }

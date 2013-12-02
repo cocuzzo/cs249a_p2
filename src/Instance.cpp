@@ -473,7 +473,7 @@ string LocationRep::attribute(const string& name) {
 		}
 		else if("destination" == name){
 			if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
-			Customer::Ptr dest = loc_->shipmentDestination();
+			Location::Ptr dest = loc_->shipmentDestination();
 			if(dest) response = dest->name();
 		}
 		else if("shipments received" == name){
@@ -483,7 +483,7 @@ string LocationRep::attribute(const string& name) {
 		}
 		else if("average latency" == name){
 			if(Location::customerLoc() != loc_->locationType() ) throw Exception( string("Error: Location is not a Customer") );
-			Capacity avgLat = loc_->shipmentsAvgLatency();
+			Time avgLat = loc_->shipmentsAvgLatency();
 			response = avgLat.toString();
 		}
 		else if("total cost" == name){

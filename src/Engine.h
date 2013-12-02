@@ -14,7 +14,7 @@
 #include "PtrInterface.h"
 #include "Instance.h"
 #include "ShippingTypes.h"
-// #include "Activity.h"
+#include "Activity.h"
 
 namespace Shipping {
 
@@ -28,7 +28,7 @@ class ForwardActivityReactor;
 
 class Location;
 
-class Shipment {
+class Shipment : public Fwk::PtrInterface<Shipment> {
 public:
 	typedef Fwk::Ptr<Shipment const> PtrConst;
 	typedef Fwk::Ptr<Shipment> Ptr;
@@ -60,6 +60,7 @@ protected:
 	Cost cost_;
 
 	Shipment(Fwk::Ptr<Location> _source, Fwk::Ptr<Location> _destination, Capacity _size);
+	
 };
 
 class Segment; //Forward declaration for Location
@@ -100,19 +101,19 @@ public:
 	virtual Fwk::Ptr<Segment> segmentAtIndex(unsigned int _index);
 	void shipmentIs(Shipment::Ptr _shipment); // indicates that a shipment has arrived
 
-	inline Capacity shipmentRate() { return shipmentRate_; }
-  inline Capacity shipmentSize() { return shipmentSize_; }
-	inline Location::Ptr shipmentDesination() { return shipmentDestination_; }
+	inline Capacity shipmentRate() const { return shipmentRate_; }
+  inline Capacity shipmentSize() const { return shipmentSize_; }
+	inline Location::Ptr shipmentDestination() const { return shipmentDestination_; }
 
-	void shipmentRateIs(U32 _shipmentRate);
+	void shipmentRateIs(Capacity _shipmentRate);
 	void shipmentSizeIs(Capacity _shipmentSize);
 	void shipmentDestinationIs(Location::Ptr _shipmentDestination);
 
-	inline U32 shipmentsReceived() { return shipmentsReceived_; }
-	inline Time shipmentsAvgLatency() { return shipmentsAvgLatency_; }
-	inline Cost shipmentsTotalCost() { return shipmentsTotalCost_; }
+	inline Capacity shipmentsReceived() const { return shipmentsReceived_; }
+	inline Time shipmentsAvgLatency() const { return shipmentsAvgLatency_; }
+	inline Cost shipmentsTotalCost() const { return shipmentsTotalCost_; }
 
-	void shipmentsReceivedIs(U32 _shipmentsReceived) { shipmentsReceived_ = _shipmentsReceived; }
+	void shipmentsReceivedIs(Capacity _shipmentsReceived) { shipmentsReceived_ = _shipmentsReceived; }
 	void shipmentsAvgLatencyIs(Time _shipmentsAvgLatency) { shipmentsAvgLatency_ = _shipmentsAvgLatency; }
 	void shipmentsTotalCost(Cost _shipmentsTotalCost) { shipmentsTotalCost_ = _shipmentsTotalCost; }
 
@@ -127,9 +128,12 @@ public:
 		virtual void notifierIs(const Location::PtrConst& _notifier);
 		
 		virtual void onLocationDel() {}
+		
 		virtual void onShipmentRate() {}
 		virtual void onShipmentSize() {}
 		virtual void onShipmentDestination() {}
+		virtual void onShipmentAttr() {}
+		
 		virtual void onShipment(Shipment::Ptr s) {}
 		
 		static NotifieeConst::Ptr NotifieeConstIs() {
@@ -171,7 +175,7 @@ protected:
 	Location::Ptr shipmentDestination_;
 
 	// stats for shipments
-	U32 shipmentsReceived_; // TODO: should this be of type Capacity?
+	Capacity shipmentsReceived_;
 	Time shipmentsAvgLatency_;
 	Cost shipmentsTotalCost_;
 
@@ -301,15 +305,15 @@ public:
 	inline Expedite expedite() const { return expedite_; }
 	void expediteIs(Expedite _expedite);
 
-	inline U32 shipmentsReceived() { return shipmentsReceived_; }
-	inline U32 shipmentsRefused() { return shipmentsRefused_; }
+	inline U32 shipmentsReceived() const { return shipmentsReceived_; }
+	inline U32 shipmentsRefused() const { return shipmentsRefused_; }
 	inline Capacity capacity() { return capacity_; }
 	void shipmentsReceivedIs(U32 _shipmentsReceived) { shipmentsReceived_ = _shipmentsReceived; }
 	void shipmentsRefusedIs(U32 _shipmentsRefused) { shipmentsRefused_ = _shipmentsRefused; }
 	void capacityIs(Capacity _capacity) { capacity_ = _capacity; }
 
 	// indicates that a shipment has arrived on this segment
-	void shipmentIs(Shipment _shipment);
+	void shipmentIs(Shipment::Ptr _shipment);
 	
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
@@ -325,7 +329,7 @@ public:
 		virtual void onSegmentReturn() {}
 		virtual void onSegmentExpedite() {}
 		virtual void onSegmentDel() {}
-		virtual void onShipment(Shipment::Ptr s) {}
+		virtual void onShipment(Shipment::Ptr _shipment) {}
 		
 		static NotifieeConst::Ptr NotifieeConstIs() {
 				Ptr m = new NotifieeConst();
@@ -447,6 +451,42 @@ protected:
 	Speed speed_;
 };
 
+
+class InjectActivityReactor : public Activity::Notifiee {
+public:
+
+	void onNextTime();
+	void onStatus();
+	
+	InjectActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
+			 activity, Location::Ptr loc) 
+     : Notifiee(activity), injectLoc_(loc), activity_(activity), manager_(manager) {}
+	
+protected:
+	Location::Ptr injectLoc_;
+	Activity::Ptr activity_;
+	Fwk::Ptr<Activity::Manager> manager_;
+	
+};
+
+class ForwardActivityReactor : public Activity::Notifiee {
+public:
+
+	void onNextTime();
+	void onStatus();
+	
+	ForwardActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
+			 activity, Shipment::Ptr shipment) 
+     : Notifiee(activity), shipment_(shipment), activity_(activity), manager_(manager) {}
+	
+protected:
+	Shipment::Ptr shipment_;
+	Activity::Ptr activity_;
+	Fwk::Ptr<Activity::Manager> manager_;
+
+};
+
+
 class Engine;
 
 class LocationReactor : public Location::Notifiee {
@@ -458,17 +498,20 @@ public:
 	}
 
 	void onLocationDel();
-	void onShipment(Shipment _shipment);
+	void onShipment(Shipment::Ptr _shipment);
+	void onShipmentAttr();
 	
 protected:
 	LocationReactor(Location *_loc, Engine* _owner) {
 		notifierIs(_loc);
 		owner_ = _owner;
-		injectActivity_ = NULL;
+		injectReactor_ = NULL;
 	}
 
+	bool readyToShip();
+	
 	Fwk::Ptr<Engine> owner_;
-	InjectReactor::Ptr injectReactor_;
+	InjectActivityReactor::Ptr injectReactor_;
 };
 
 class SegmentReactor : public Segment::Notifiee {
@@ -483,19 +526,18 @@ public:
 	void onSegmentReturn();
 	void onSegmentExpedite();
 	void onSegmentDel(); 
-	void onShipment(Shipment _shipment);
+	void onShipment(Shipment::Ptr _shipment);
 
 protected:
 	SegmentReactor(Segment* _seg, Engine* _owner) {
 		notifierIs(_seg);
 		owner_ = _owner;
-		forwardActivity_ = NULL;
 	}
 
 	Fwk::Ptr<Engine> owner_;
 	Location::Ptr prevSource_;
 	Segment::Ptr prevReturn_;
-	Activity::Ptr forwardActivity_;
+	std::vector<ForwardActivityReactor::Ptr> forwardReactors_;
 };
 
 class Path;
@@ -512,7 +554,7 @@ public:
 	}
 	~Engine();
 
-	static inline Activity::Manager::Ptr manager() { return manager_; }
+	inline Activity::Manager::Ptr manager() { return manager_; }
 
 	Location::Ptr locationNew(const std::string& name, Location::LocationType locationType);
 	Segment::Ptr segmentNew(const std::string& name, Segment::SegmentType segmentType);
@@ -540,8 +582,8 @@ public:
 		Segment::Expedite _expedite, Cost _maxCost, Mile _maxLength, Time maxTime);
 	std::vector<Fwk::Ptr<Path>> connections(Location::Ptr start, Location::Ptr end);
 
-	InjectReactor* injectorNew(Location::Ptr customer);
-	ForwardReactor* forwarderNew(Segment::Ptr segment);
+	InjectActivityReactor* injectActivityNew(Location::Ptr _customer);
+	ForwardActivityReactor* forwardActivityNew(Shipment::Ptr _shipment);
 
 	// shipment routing helper function that consults the spanning tree graph
 	Segment::Ptr routeShipment(Shipment::Ptr shipment, Location::Ptr node);
@@ -747,39 +789,6 @@ protected:
 	U32 expediteSegments_;
 };
 
-class InjectActivityReactor : public Activity::Notifee {
-public:
-
-	void onNextTime();
-	void onStatus();
-	
-	InjectActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
-			 activity, Location::Ptr loc) 
-     : Notifiee(activity), injectLoc_(loc), activity_(activity), manager_(manager) {}
-	
-protected:
-	Location::Ptr injectLoc_;
-	Activity::Ptr activity_;
-	Fwk::Ptr<Activity::Manager> manager_;
-	
-};
-
-class ForwardActivityReactor : public Activity::Notifee {
-public:
-
-	void onNextTime();
-	void onStatus();
-	
-	ForwardActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
-			 activity, Shipment::Ptr shipment) 
-     : Notifiee(activity), shipment_(shipment), activity_(activity), manager_(manager) {}
-	
-protected:
-	Shipment::Ptr shipment_;
-	Activity::Ptr activity_;
-	Fwk::Ptr<Activity::Manager> manager_;
-
-};
 
 
 } /* end shipping namespace */
