@@ -22,7 +22,7 @@ class ActivityComp : public binary_function<Activity::Ptr, Activity::Ptr, bool> 
 class ActivityImpl : public Activity {
 	protected:
     ActivityImpl(const string& name, Fwk::Ptr<class ManagerImpl> manager)
-				: Activity(name), status_(free), notifiee_(NULL), manager_(manager) {}
+				: Activity(name), status_(free), nextTime_(0.0), notifiee_(NULL), manager_(manager) {}
   	
   	Fwk::Ptr<class ManagerImpl> manager() const { return manager_; }
 

@@ -32,11 +32,11 @@ class Shipment : public Fwk::PtrInterface<Shipment> {
 public:
 	typedef Fwk::Ptr<Shipment const> PtrConst;
 	typedef Fwk::Ptr<Shipment> Ptr;
-  inline Capacity size() { return size_; }
+	
+  inline Capacity numPackages() { return numPackages_; }
 	inline Fwk::Ptr<Location> source() { return source_; }
 	inline Fwk::Ptr<Location> destination() { return destination_; }
 	inline Time startTime() { return startTime_; }
-	inline Time finishTime() { return finishTime_; }
 	inline Mile distance() { return distance_; }
 	inline Cost cost() { return cost_; }
 
@@ -44,22 +44,21 @@ public:
 	void costIs(Cost _cost) { cost_ = _cost; }
 
 	static Shipment::Ptr ShipmentNew(Fwk::Ptr<Location> _source, Fwk::Ptr<Location> _destination, 
-		Capacity _size) {
-		Ptr m = new Shipment(_source, _destination, _size);
+		Capacity _numPackages, Time _startTime) {
+		Ptr m = new Shipment(_source, _destination, _numPackages, _startTime);
 		if (m == NULL) throw Exception ("failed to create new Shipment in Shipment::Shipment");
   	return m;
 	}
 
 protected:
-	Capacity size_;
+	Capacity numPackages_;
 	Fwk::Ptr<Location> source_;
 	Fwk::Ptr<Location> destination_;
-	Time startTime_;	// TODO: should startTime be passed into constructor?
-	Time finishTime_;
+	Time startTime_;
 	Mile distance_;
 	Cost cost_;
 
-	Shipment(Fwk::Ptr<Location> _source, Fwk::Ptr<Location> _destination, Capacity _size);
+	Shipment(Fwk::Ptr<Location> _source, Fwk::Ptr<Location> _destination, Capacity _numPackages, Time _startTime);
 	
 };
 
@@ -110,12 +109,12 @@ public:
 	void shipmentDestinationIs(Location::Ptr _shipmentDestination);
 
 	inline Capacity shipmentsReceived() const { return shipmentsReceived_; }
-	inline Time shipmentsAvgLatency() const { return shipmentsAvgLatency_; }
+	inline Time shipmentsAvgLatency() const { return shipmentsTotalTime_.value() / shipmentsReceived_.value(); }
 	inline Cost shipmentsTotalCost() const { return shipmentsTotalCost_; }
 
-	void shipmentsReceivedIs(Capacity _shipmentsReceived) { shipmentsReceived_ = _shipmentsReceived; }
-	void shipmentsAvgLatencyIs(Time _shipmentsAvgLatency) { shipmentsAvgLatency_ = _shipmentsAvgLatency; }
-	void shipmentsTotalCost(Cost _shipmentsTotalCost) { shipmentsTotalCost_ = _shipmentsTotalCost; }
+	void shipmentsReceivedInc() { ++shipmentsReceived_; }
+	void shipmentsTotalTimeInc(Time _shipmentTime) { shipmentsTotalTime_ = shipmentsTotalTime_.value() + _shipmentTime.value(); }
+	void shipmentsTotalCostInc(Cost _shipmentCost) { shipmentsTotalCost_ = shipmentsTotalCost_.value() + _shipmentCost.value(); }
 
 	class NotifieeConst : public virtual Fwk::PtrInterface<NotifieeConst> {
 	public:
@@ -176,7 +175,7 @@ protected:
 
 	// stats for shipments
 	Capacity shipmentsReceived_;
-	Time shipmentsAvgLatency_;
+	Time shipmentsTotalTime_;
 	Cost shipmentsTotalCost_;
 
 	NotifieeConst *notifiee_;
@@ -456,9 +455,9 @@ public:
 	void onNextTime();
 	void onStatus();
 	
-	InjectActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
-			 activity, Location::Ptr loc) 
-     : Notifiee(activity), injectLoc_(loc), activity_(activity), manager_(manager) {}
+	InjectActivityReactor(Fwk::Ptr<Activity::Manager> _manager, Activity*
+			 _activity, Location::Ptr _loc) 
+     : Notifiee(_activity), injectLoc_(_loc), activity_(_activity), manager_(_manager) {}
      
 	~InjectActivityReactor(){}
 	
@@ -475,9 +474,9 @@ public:
 	void onNextTime();
 	void onStatus();
 	
-	ForwardActivityReactor(Fwk::Ptr<Activity::Manager> manager, Activity*
-			 activity, Shipment::Ptr shipment) 
-     : Notifiee(activity), shipment_(shipment), activity_(activity), manager_(manager) {}
+	ForwardActivityReactor(Fwk::Ptr<Activity::Manager> _manager, Activity*
+			 _activity, Shipment::Ptr _shipment) 
+     : Notifiee(_activity), shipment_(_shipment), activity_(_activity), manager_(_manager) {}
 	
 	~ForwardActivityReactor(){}
 	

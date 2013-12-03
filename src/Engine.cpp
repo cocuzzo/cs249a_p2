@@ -8,10 +8,11 @@ using namespace Shipping;
 /******************************************************************************
 ** Shipment Impl
 ******************************************************************************/
-Shipment::Shipment(Location::Ptr _source, Location::Ptr _destination, Capacity _size) :
-  size_(_size),
+Shipment::Shipment(Location::Ptr _source, Location::Ptr _destination, Capacity _numPackages, Time _startTime) :
+  numPackages_(_numPackages),
   source_(_source),
-  destination_(_destination)
+  destination_(_destination),
+  startTime_(_startTime)
 {}
 
 /******************************************************************************
@@ -218,20 +219,21 @@ LocationReactor::readyToShip() {
 
 void
 LocationReactor::onShipment(Shipment::Ptr _shipment) {
-/*
   // check if the current location is the desination of the shipment
-  if (notifier->name() == _shipment->destination()->name()) {
+  if (notifier_->name() == _shipment->destination()->name()) {
     // the shipment has been delivered, log some stats
-    // TODO
-    return;
-  } else {
+    notifier()->shipmentsReceivedInc();
+    Time timeTaken(owner_->manager()->now().value() - _shipment->startTime().value());
+    notifier()->shipmentsTotalTimeInc(timeTaken);
+    notifier()->shipmentsTotalCostInc(_shipment->cost());
+  } 
+  else {
     // determine the next segment to forward the shipment along
-    Segment::Ptr nextSegment = owner_->nextNode(_shipment, notifier_);
+    Segment::Ptr nextSegment = owner_->routeShipment(_shipment, notifier());
     // now put the shipment onto the segment and let the segment/reactor
-    // take care of creating and scheduling the forward activity
-    nextSegment_->shipmentIs(_shipment);
-  }
-*/  
+    // 	take care of creating and scheduling the forward activity
+    nextSegment->shipmentIs(_shipment);
+  } 
   
 }
 
@@ -241,14 +243,14 @@ LocationReactor::onShipment(Shipment::Ptr _shipment) {
 void
 SegmentReactor::onSegmentSource() {
   Location::Ptr prevSource = prevSource_;
-  prevSource_ = notifier()->source(); //PEO
+  prevSource_ = notifier()->source(); 
   owner_->handleSegmentSource(notifier(), prevSource);
 }
 
 void
 SegmentReactor::onSegmentReturn() {
   Segment::Ptr prevReturn = prevReturn_;
-  prevReturn_ = notifier()->returnSegment(); //PEO
+  prevReturn_ = notifier()->returnSegment();
   owner_->handleSegmentReturn(notifier(), prevReturn);
 }
 
@@ -282,12 +284,6 @@ Engine::~Engine(){
 
 }
 
-// Activity::Manager::Ptr managerNew(Activity::Manager::ManagerType _type) {
-//   Activity::Manager::Ptr mgr = Activity::Manager::activityManagerInstance(_type);
-//   if (!mgr) {
-//     throw Exception ("unable to create new activity manager in Engine::managerNew");
-//   }
-// }
 
 Location::Ptr
 Engine::locationNew(const std::string& name, Location::LocationType locationType){
@@ -436,23 +432,25 @@ Engine::injectActivityNew(Location::Ptr _customer) {
     throw Exception ("unable to create new inject reactor in Engine::injectActivityNew");
   } 
   injectActivity->lastNotifieeIs(reactor);
+  injectActivity->nextTimeIs(manager_->now());
   injectActivity->statusIs(Activity::nextTimeScheduled);
+  
   return reactor;
 }
 
 ForwardActivityReactor*
 Engine::forwardActivityNew(Shipment::Ptr _shipment) {
-/* TODO
-  // create new ForwardActivity around the shipment
-  Activity::Ptr forwardActivity = manager_->activityNew();
-  // create new ForwardActivityReactor to schedule the ForwardActivity
-  ForwardActivityReactor *reactor = ForwardActivityReactor::ForwardActivityReactorIs(forwardActivity.ptr(), this);
+
+  Activity::Ptr forwardActivity = manager_->activityNew( string("ForwardActivity") );
+  ForwardActivityReactor* reactor = new ForwardActivityReactor(manager_, forwardActivity.ptr(), _shipment);
   if (!reactor) {
-    throw Exception ("unable to create new inject reactor in Engine::forwardActivityNew");
+    throw Exception ("unable to create new forward reactor in Engine::forwardActivityNew");
   } 
+  forwardActivity->lastNotifieeIs(reactor);
+  forwardActivity->nextTimeIs(manager_->now());
+  forwardActivity->statusIs(Activity::nextTimeScheduled);
+  
   return reactor;
-*/
-return NULL; //Placeholder
 }
 
 // shipment routing helper function that consults the spanning tree graph
@@ -831,7 +829,8 @@ void InjectActivityReactor::onStatus() {
 				//Do the injection...
 				Shipment::Ptr newShipment = Shipment::ShipmentNew(injectLoc_, 
 																													injectLoc_->shipmentDestination(), 
-																													injectLoc_->shipmentSize());
+																													injectLoc_->shipmentSize(),
+																													manager_->now());
 				injectLoc_->shipmentIs(newShipment);
 				break;
 			}
