@@ -20,7 +20,7 @@ verification: verification.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:
-	rm -f test1 test1.o example example.o example2 example2.o test-cases-assign2 test-cases-assign2.o $(OBJECTS) *~
+	rm -f test1 test1.o example example.o example2 example2.o test-cases-assign2 test-cases-assign2.o verification verification.o $(OBJECTS) *~
 
 ActivityImpl.o: ActivityImpl.cpp ActivityImpl.h	Activity.h 
 Engine.o: Engine.cpp Engine.h PtrInterface.h Ptr.h
