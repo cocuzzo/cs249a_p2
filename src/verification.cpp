@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     seg_dc->attributeIs("difficulty", "1");
 
     // -- Shipment Schedules
-    a->attributeIs("transfer rate", "120"); //PEO
+    a->attributeIs("transfer rate", "240"); //PEO
     a->attributeIs("shipment size", "50");
     a->attributeIs("destination", "d");
 

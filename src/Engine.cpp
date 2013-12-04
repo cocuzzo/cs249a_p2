@@ -275,6 +275,7 @@ void SegmentReactor::onShipment(Shipment::Ptr _shipment) {
   Segment::Ptr seg = notifier();
   
   seg->shipmentsReceivedInc();
+  //cout << seg->name() << " : " << seg->shipmentsTraversing().toString() << endl;
   if(seg->shipmentsTraversing() < seg->capacity()){
   	//Segment accepted shipment
   	seg->shipmentsTraversingInc();
@@ -482,9 +483,7 @@ Engine::forwardActivityNew(SegmentReactor::Ptr _segReactor, Shipment::Ptr _shipm
 	ostringstream s;
 	s << "ForwardActivity_" << gFAid++;
   Activity::Ptr forwardActivity = manager_->activityNew( s.str() );
-  
-  cout << forwardActivity->name() << endl;
-  
+  //cout << forwardActivity->name() << endl;
   ForwardActivityReactor* reactor = new ForwardActivityReactor(manager_, forwardActivity.ptr(), _shipment, _segReactor);
   if (!reactor) {
     throw Exception ("unable to create new forward reactor in Engine::forwardActivityNew");
@@ -1027,7 +1026,8 @@ void ForwardActivityReactor::onStatus() {
 				Location::Ptr nextLoc = seg->returnSegment()->source();
 				nextLoc->shipmentIs(shipment_);
 				//delete activity and reactor
-				seg->shipmentsTraversingDec();
+				cout << seg->name() << " : " << seg->shipmentsTraversing().toString() << endl;
+				if(seg->shipmentsTraversing() > 0) seg->shipmentsTraversingDec(); //PEO
 				activity_->statusIs(Activity::deleted);
 				
 			}
