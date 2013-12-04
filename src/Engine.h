@@ -41,7 +41,7 @@ public:
 	inline Cost cost() { return cost_; }
 
 	void distanceIs(Mile _distance) { distance_ = _distance; }
-	void costIs(Cost _cost) { cost_ = _cost; }
+	void costInc(Cost costAdded) { cost_ = cost_.value() + costAdded.value(); }
 
 	static Shipment::Ptr ShipmentNew(Fwk::Ptr<Location> _source, Fwk::Ptr<Location> _destination, 
 		Capacity _numPackages, Time _startTime) {
@@ -107,6 +107,8 @@ public:
 	void shipmentRateIs(Capacity _shipmentRate);
 	void shipmentSizeIs(Capacity _shipmentSize);
 	void shipmentDestinationIs(Location::Ptr _shipmentDestination);
+	
+	bool readyToShip();
 
 	inline Capacity shipmentsReceived() const { return shipmentsReceived_; }
 	inline Time shipmentsAvgLatency() const { return shipmentsTotalTime_.value() / shipmentsReceived_.value(); }
@@ -305,9 +307,15 @@ public:
 	void expediteIs(Expedite _expedite);
 
 	inline Capacity shipmentsReceived() const { return shipmentsReceived_; }
+	void shipmentsReceivedInc() { ++shipmentsReceived_; }
 	inline Capacity shipmentsRefused() const { return shipmentsRefused_; }
+	void shipmentsRefusedInc() { ++shipmentsRefused_; }
 	inline Capacity capacity() { return capacity_; }
 	void capacityIs(Capacity _capacity) { capacity_ = _capacity; }
+	
+	inline Capacity shipmentsTraversing() const { return shipmentsTraversing_; }
+	void shipmentsTraversingInc(){ ++shipmentsTraversing_; }
+	void shipmentsTraversingDec(){ shipmentsTraversing_ = shipmentsTraversing_.value() - 1; }
 
 	// indicates that a shipment has arrived on this segment
 	void shipmentIs(Shipment::Ptr _shipment);
@@ -363,6 +371,8 @@ protected:
 	Segment::Ptr returnSegment_;
 	Difficulty diff_;
 	Expedite expedite_;
+	
+	Capacity shipmentsTraversing_;
 
 	// stats for shipments
 	Capacity shipmentsReceived_;
@@ -451,6 +461,7 @@ protected:
 
 class InjectActivityReactor : public Activity::Notifiee {
 public:
+	typedef Fwk::Ptr<InjectActivityReactor> Ptr;
 
 	void onNextTime();
 	void onStatus();
@@ -468,22 +479,31 @@ protected:
 	
 };
 
+class SegmentReactor;
+
 class ForwardActivityReactor : public Activity::Notifiee {
 public:
+	typedef Fwk::Ptr<ForwardActivityReactor> Ptr;
+	
+	inline bool delivered(){ return delivered_; }
+	void deliveredIs(bool _delivered) { delivered_ = _delivered; }
 
 	void onNextTime();
 	void onStatus();
 	
 	ForwardActivityReactor(Fwk::Ptr<Activity::Manager> _manager, Activity*
-			 _activity, Shipment::Ptr _shipment) 
-     : Notifiee(_activity), shipment_(_shipment), activity_(_activity), manager_(_manager) {}
+			 _activity, Shipment::Ptr _shipment, Fwk::Ptr<SegmentReactor> _segReactor) 
+     : Notifiee(_activity), segReactor_(_segReactor), shipment_(_shipment), activity_(_activity), manager_(_manager) {}
 	
 	~ForwardActivityReactor(){}
 	
 protected:
+	Fwk::Ptr<SegmentReactor> segReactor_;
 	Shipment::Ptr shipment_;
 	Activity::Ptr activity_;
 	Fwk::Ptr<Activity::Manager> manager_;
+	
+	bool delivered_;
 
 };
 
@@ -492,6 +512,7 @@ class Engine;
 
 class LocationReactor : public Location::Notifiee {
 public:
+	typedef Fwk::Ptr<LocationReactor> Ptr;
 
 	static LocationReactor * LocationReactorIs(Location *loc, Engine* owner) {
 		LocationReactor *m = new LocationReactor(loc, owner);
@@ -509,7 +530,6 @@ protected:
 		injectReactor_ = NULL;
 	}
 
-	bool readyToShip();
 	
 	Fwk::Ptr<Engine> owner_;
 	InjectActivityReactor::Ptr injectReactor_;
@@ -517,6 +537,7 @@ protected:
 
 class SegmentReactor : public Segment::Notifiee {
 public:
+	typedef Fwk::Ptr<SegmentReactor> Ptr;
 
 	static SegmentReactor * SegmentReactorIs(Segment* seg, Engine* owner) {
 		SegmentReactor *m = new SegmentReactor(seg, owner);
@@ -528,6 +549,10 @@ public:
 	void onSegmentExpedite();
 	void onSegmentDel(); 
 	void onShipment(Shipment::Ptr _shipment);
+	
+	inline Fwk::Ptr<Engine> owner() const { return owner_; }
+	
+	void forwardActivityDel(ForwardActivityReactor::Ptr _far);
 
 protected:
 	SegmentReactor(Segment* _seg, Engine* _owner) {
@@ -538,7 +563,7 @@ protected:
 	Fwk::Ptr<Engine> owner_;
 	Location::Ptr prevSource_;
 	Segment::Ptr prevReturn_;
-	std::vector<ForwardActivityReactor::Ptr> forwardReactors_;
+	std::list<ForwardActivityReactor::Ptr> forwardReactors_;
 };
 
 class Path;
@@ -594,7 +619,7 @@ public:
 	std::vector<Fwk::Ptr<Path>> connections(Location::Ptr start, Location::Ptr end);
 
 	InjectActivityReactor* injectActivityNew(Location::Ptr _customer);
-	ForwardActivityReactor* forwardActivityNew(Shipment::Ptr _shipment);
+	ForwardActivityReactor* forwardActivityNew(SegmentReactor::Ptr _segReactor, Shipment::Ptr _shipment);
 
 	// shipment routing helper function that consults the spanning tree graph
 	Segment::Ptr routeShipment(Shipment::Ptr shipment, Location::Ptr destination);

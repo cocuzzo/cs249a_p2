@@ -79,7 +79,7 @@ void ManagerImpl::nowIs(Shipping::Time t) {
 		scheduledActivities_.pop();
 
 		nextToRun->statusIs(Activity::executing);
-		nextToRun->statusIs(Activity::free);
+		
 	}
 	//synchronize the time
 	now_ = t;

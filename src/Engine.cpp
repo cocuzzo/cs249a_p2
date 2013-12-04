@@ -87,6 +87,13 @@ Location::shipmentDestinationIs(Location::Ptr _shipmentDestination) {
   }
 }
 
+bool
+Location::readyToShip() {
+  return ( shipmentRate_ != Capacity(0) &&
+           shipmentSize_ != Capacity(0) &&
+           shipmentDestination_ != NULL );
+}
+
 //----------| NotifieeConst Implementation |------------//
 
 Location::NotifieeConst::~NotifieeConst() {
@@ -198,24 +205,19 @@ LocationReactor::onLocationDel() {
 void
 LocationReactor::onShipmentAttr() {
   if (injectReactor_) {
-    // inject activity exists so update its parameters
-    /*
-    injectReactor_->shipmentRateIs(notifier_->shipmentRate());
-    injectReactor_->shipmentSizeIs(notifier_->shipmentSize());
-    injectReactor_->shipmentDestinationIs(notifier_->shipmentDestination());
-    */
-  } else if (readyToShip()) {
+    // inject activity exists
+    // now make sure the 3 attributes still require injecting
+    if ( !notifier()->readyToShip() ){
+     injectReactor_->notifier()->lastNotifieeIs(NULL);
+     injectReactor_ = NULL;
+    }
+  } 
+  else if ( notifier()->readyToShip() ) {
     // let Engine create & schedule new inject activity
     injectReactor_ = owner_->injectActivityNew(notifier());
   }
 }
 
-bool
-LocationReactor::readyToShip() {
-  return ( notifier_->shipmentRate() != Capacity(0) &&
-           notifier_->shipmentSize() != Capacity(0) &&
-           notifier_->shipmentDestination() != NULL );
-}
 
 void
 LocationReactor::onShipment(Shipment::Ptr _shipment) {
@@ -266,8 +268,44 @@ SegmentReactor::onSegmentDel() {
 
 void SegmentReactor::onShipment(Shipment::Ptr _shipment) {
   // create new forwarding reactor for this shipment
-  forwardReactors_.push_back(owner_->forwardActivityNew(_shipment));
+  ForwardActivityReactor::Ptr reactor = owner_->forwardActivityNew(this, _shipment);
+  
+  Activity::Ptr activity = reactor->notifier();
+  Activity::Manager::Ptr manager = owner_->manager();
+  Segment::Ptr seg = notifier();
+  
+  seg->shipmentsReceivedInc();
+  if(seg->shipmentsTraversing() < seg->capacity()){
+  	//Segment accepted shipment
+  	seg->shipmentsTraversingInc();
+  	reactor->deliveredIs(true);
+  	Fleet::Ptr fleet;
+  	if(Segment::boatSeg() == seg->segmentType()) fleet = owner_->boatFleet();
+  	else if(Segment::truckSeg() == seg->segmentType()) fleet = owner_->truckFleet();
+  	else fleet = owner_->planeFleet();
+  	Time traversalTime( seg->length().value() / fleet->speed().value() );
+  	activity->nextTimeIs( manager->now().value() + traversalTime.value() );
+  	
+  }
+  else{
+  	//Segment refuses shipment
+  	seg->shipmentsRefusedInc();
+  	activity->nextTimeIs( manager->now().value() + 1 );
+  }
+  
+  activity->statusIs(Activity::nextTimeScheduled);
 
+  forwardReactors_.push_back(reactor);
+}
+
+void SegmentReactor::forwardActivityDel(ForwardActivityReactor::Ptr far){
+	far->notifier()->lastNotifieeIs(NULL);
+	for(auto it = forwardReactors_.begin(); it != forwardReactors_.end(); ++it){
+		if(*it == far){
+			forwardReactors_.erase(it);
+			break;
+		}
+	}
 }
 
 /******************************************************************************
@@ -439,17 +477,15 @@ Engine::injectActivityNew(Location::Ptr _customer) {
 }
 
 ForwardActivityReactor*
-Engine::forwardActivityNew(Shipment::Ptr _shipment) {
+Engine::forwardActivityNew(SegmentReactor::Ptr _segReactor, Shipment::Ptr _shipment) {
 
   Activity::Ptr forwardActivity = manager_->activityNew( string("ForwardActivity") );
-  ForwardActivityReactor* reactor = new ForwardActivityReactor(manager_, forwardActivity.ptr(), _shipment);
+  ForwardActivityReactor* reactor = new ForwardActivityReactor(manager_, forwardActivity.ptr(), _shipment, _segReactor);
   if (!reactor) {
     throw Exception ("unable to create new forward reactor in Engine::forwardActivityNew");
   } 
   forwardActivity->lastNotifieeIs(reactor);
-  forwardActivity->nextTimeIs(manager_->now());
-  forwardActivity->statusIs(Activity::nextTimeScheduled);
-  
+  	
   return reactor;
 }
 
@@ -912,11 +948,15 @@ void InjectActivityReactor::onStatus() {
 		case Activity::executing:
 			{
 				//Do the injection...
-				Shipment::Ptr newShipment = Shipment::ShipmentNew(injectLoc_, 
-																													injectLoc_->shipmentDestination(), 
-																													injectLoc_->shipmentSize(),
-																													manager_->now());
-				injectLoc_->shipmentIs(newShipment);
+				if( injectLoc_->readyToShip() ){
+					Shipment::Ptr newShipment = Shipment::ShipmentNew(injectLoc_, 
+																														injectLoc_->shipmentDestination(), 
+																														injectLoc_->shipmentSize(),
+																														manager_->now());
+											
+					injectLoc_->shipmentIs(newShipment);
+					activity_->statusIs(Activity::free);
+				}
 				break;
 			}
 	
@@ -951,20 +991,59 @@ void InjectActivityReactor::onNextTime() { }
 ******************************************************************************/
 
 void ForwardActivityReactor::onStatus() {
-/*	
+	Segment::Ptr seg = segReactor_->notifier();
+	Engine::Ptr eng = segReactor_->owner();
+	
 	switch (activity_->status()) {
 
 		case Activity::executing:
 		{
 			//Do the forwarding...
+			if(delivered_){
+				//give to next location
+				Location::Ptr nextLoc = seg->returnSegment()->source();
+				nextLoc->shipmentIs(shipment_);
+				//delete activity and reactor
+				seg->shipmentsTraversingDec();
+				activity_->statusIs(Activity::deleted);
+				
+			}
+			else{
+				activity_->statusIs(Activity::waiting);
+			}
 			
 			break;
 		}
-	
-		case Activity::free:
+		case Activity::deleted:
 		{
-			//when done, automatically enqueue myself for next execution
-			activity_->nextTimeIs(Time(activity_->nextTime().value() + CALCULATE_RATE));
+			segReactor_->forwardActivityDel(this);
+			break;
+		}
+		
+		case Activity::waiting:
+		{
+			if(seg->shipmentsTraversing() < seg->capacity()){
+				seg->shipmentsTraversingInc();
+				delivered_ = true;
+				Fleet::Ptr fleet;
+				if(Segment::boatSeg() == seg->segmentType()) fleet = eng->boatFleet();
+				else if(Segment::truckSeg() == seg->segmentType()) fleet = eng->truckFleet();
+				else fleet = eng->planeFleet();
+				
+				double size = shipment_->source()->shipmentSize().value();
+				double fleetCap = fleet->capacity().value();
+				double numVehicles = ceil(size / fleetCap);
+				Cost segCost( numVehicles * seg->length().value() * seg->difficulty().value() * fleet->cost().value() );
+				shipment_->costInc(segCost);
+				
+				Time traversalTime( seg->length().value() / fleet->speed().value() );
+			
+				activity_->nextTimeIs(manager_->now().value() + traversalTime.value());
+			}
+			else{
+				activity_->nextTimeIs(manager_->now().value() + 1);
+			}
+			
 			activity_->statusIs(Activity::nextTimeScheduled);
 			break;
 		}
@@ -982,7 +1061,7 @@ void ForwardActivityReactor::onStatus() {
 		}
 		
 	}
-*/
+
 }
 
 void ForwardActivityReactor::onNextTime() { }
