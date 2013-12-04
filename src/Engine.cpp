@@ -476,10 +476,12 @@ Engine::injectActivityNew(Location::Ptr _customer) {
   return reactor;
 }
 
+static int gFAid = 0;
+
 ForwardActivityReactor*
 Engine::forwardActivityNew(SegmentReactor::Ptr _segReactor, Shipment::Ptr _shipment) {
 
-  Activity::Ptr forwardActivity = manager_->activityNew( string("ForwardActivity") );
+  Activity::Ptr forwardActivity = manager_->activityNew( string("ForwardActivity" + gFAid++) );
   ForwardActivityReactor* reactor = new ForwardActivityReactor(manager_, forwardActivity.ptr(), _shipment, _segReactor);
   if (!reactor) {
     throw Exception ("unable to create new forward reactor in Engine::forwardActivityNew");
@@ -491,17 +493,26 @@ Engine::forwardActivityNew(SegmentReactor::Ptr _segReactor, Shipment::Ptr _shipm
 
 // shipment routing helper function that consults the spanning tree graph
 Segment::Ptr
-Engine::routeShipment(Shipment::Ptr shipment, Location::Ptr destination)
+Engine::routeShipment(Shipment::Ptr shipment, Location::Ptr current)
 {
   if (routingTable_.empty()) {
     // construct the routing table for the first time
     // assumes that the graph has at least 2 connected locations (not degenerate)
     Engine::generateRoutingTable(Engine::minCost());
+    
+    //Print routing table
+    for (auto p : routingTable_) {
+    	string key = p.first;
+    	Segment::Ptr val = p.second;
+    	cout << key << " : " << val->name() << endl;
+    }
+    
   }
 
-  Location::Ptr source = shipment->source();
+  Location::Ptr dest = shipment->destination();
   Segment::Ptr seg;
-  string key = source->name() + "-" + destination->name();
+  string key = current->name() + "-" + dest->name();
+  //cout << key << endl;
   auto it = routingTable_.find(key);
   if (it != routingTable_.end()) {
     seg = it->second;

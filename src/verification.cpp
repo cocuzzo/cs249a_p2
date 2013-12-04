@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
     Activity::Manager::Ptr activityManager = activityManagerInstance();
     
     // advance the time by a full day
-    activityManager->nowIs(24.0);
+    activityManager->nowIs(23.0);
 
     // now clear all shipment schedules
     a->attributeIs("transfer rate", "0");
