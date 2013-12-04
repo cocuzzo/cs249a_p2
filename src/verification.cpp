@@ -1,8 +1,9 @@
 #include "Activity.h"
 #include "Instance.h"
+#include "ShippingTypes.h"
 
 int main(int argc, char* argv[]) {
-  
+ try{ 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // -- Simulation Entities
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,7 +84,7 @@ int main(int argc, char* argv[]) {
     seg_dc->attributeIs("difficulty", "1");
 
     // -- Shipment Schedules
-    a->attributeIs("transfer rate", "2");
+    a->attributeIs("transfer rate", "120"); //PEO
     a->attributeIs("shipment size", "50");
     a->attributeIs("destination", "d");
 
@@ -158,6 +159,9 @@ int main(int argc, char* argv[]) {
     cout << "shipments refused:  " << seg_dc->attribute("shipments refused") << " [expected 0]" << endl;
     cout << "segment capacity:   " << seg_dc->attribute("capacity") << " [expected 10]" << endl;
     cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    
+  }
+  catch(Shipping::Exception& e){
+  	cerr << e.what() << endl;
+  }  
     return 0;
 }
