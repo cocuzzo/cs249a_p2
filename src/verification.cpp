@@ -1,8 +1,9 @@
 #include "Activity.h"
 #include "Instance.h"
+#include "ShippingTypes.h"
 
 int main(int argc, char* argv[]) {
-  
+ try{ 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // -- Simulation Entities
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,15 +82,15 @@ int main(int argc, char* argv[]) {
     seg_dc->attributeIs("difficulty", "1");
 
     // -- Shipment Schedules
-    a->attributeIs("transfer rate", "2");
+    a->attributeIs("transfer rate", "240"); //PEO
     a->attributeIs("shipment size", "50");
     a->attributeIs("destination", "d");
 
-    b->attributeIs("transfer rate", "2");
+    b->attributeIs("transfer rate", "240");
     b->attributeIs("shipment size", "50");
     b->attributeIs("destination", "d");
 
-    d->attributeIs("transfer rate", "1");
+    d->attributeIs("transfer rate", "240");
     d->attributeIs("shipment size", "50");
     d->attributeIs("destination", "b");
 
@@ -97,6 +98,8 @@ int main(int argc, char* argv[]) {
     // -- Time-stepped Simulation  
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     Activity::Manager::Ptr activityManager = activityManagerInstance();
+    //activityManager->activityTimeIs(Activity::Manager::realTime());
+    activityManager->activityTimeIs(Activity::Manager::virtualTime());
     
     // advance the time by a full day
     activityManager->nowIs(23.0);
@@ -156,6 +159,9 @@ int main(int argc, char* argv[]) {
     cout << "shipments refused:  " << seg_dc->attribute("shipments refused") << " [expected 0]" << endl;
     cout << "segment capacity:   " << seg_dc->attribute("capacity") << " [expected 10]" << endl;
     cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    
+  }
+  catch(Shipping::Exception& e){
+  	cerr << e.what() << endl;
+  }  
     return 0;
 }

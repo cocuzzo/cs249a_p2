@@ -275,6 +275,7 @@ void SegmentReactor::onShipment(Shipment::Ptr _shipment) {
   Segment::Ptr seg = notifier();
   
   seg->shipmentsReceivedInc();
+  //cout << seg->name() << " : " << seg->shipmentsTraversing().toString() << endl;
   if(seg->shipmentsTraversing() < seg->capacity()){
   	//Segment accepted shipment
   	seg->shipmentsTraversingInc();
@@ -285,12 +286,11 @@ void SegmentReactor::onShipment(Shipment::Ptr _shipment) {
   	else fleet = owner_->planeFleet();
   	Time traversalTime( seg->length().value() / fleet->speed().value() );
   	activity->nextTimeIs( manager->now().value() + traversalTime.value() );
-  	
   }
   else{
   	//Segment refuses shipment
   	seg->shipmentsRefusedInc();
-  	activity->nextTimeIs( manager->now().value() + 1 );
+  	activity->nextTimeIs( manager->now().value() + 1.0 );
   }
   
   activity->statusIs(Activity::nextTimeScheduled);
@@ -476,12 +476,14 @@ Engine::injectActivityNew(Location::Ptr _customer) {
   return reactor;
 }
 
-static int gFAid = 0;
+static unsigned long gFAid = 0;
 
 ForwardActivityReactor*
 Engine::forwardActivityNew(SegmentReactor::Ptr _segReactor, Shipment::Ptr _shipment) {
-
-  Activity::Ptr forwardActivity = manager_->activityNew( string("ForwardActivity" + gFAid++) );
+	ostringstream s;
+	s << "ForwardActivity_" << gFAid++;
+  Activity::Ptr forwardActivity = manager_->activityNew( s.str() );
+  //cout << forwardActivity->name() << endl;
   ForwardActivityReactor* reactor = new ForwardActivityReactor(manager_, forwardActivity.ptr(), _shipment, _segReactor);
   if (!reactor) {
     throw Exception ("unable to create new forward reactor in Engine::forwardActivityNew");
@@ -508,11 +510,10 @@ Engine::routeShipment(Shipment::Ptr shipment, Location::Ptr current)
     }
     
   }
-
+  
   Location::Ptr dest = shipment->destination();
   Segment::Ptr seg;
   string key = current->name() + "-" + dest->name();
-  //cout << key << endl;
   auto it = routingTable_.find(key);
   if (it != routingTable_.end()) {
     seg = it->second;
@@ -1004,6 +1005,10 @@ void InjectActivityReactor::onNextTime() { }
 void ForwardActivityReactor::onStatus() {
 	Segment::Ptr seg = segReactor_->notifier();
 	Engine::Ptr eng = segReactor_->owner();
+	Fleet::Ptr fleet;
+	if(Segment::boatSeg() == seg->segmentType()) fleet = eng->boatFleet();
+	else if(Segment::truckSeg() == seg->segmentType()) fleet = eng->truckFleet();
+	else fleet = eng->planeFleet();
 	
 	switch (activity_->status()) {
 
@@ -1011,11 +1016,18 @@ void ForwardActivityReactor::onStatus() {
 		{
 			//Do the forwarding...
 			if(delivered_){
+				//update total cost
+				double size = shipment_->source()->shipmentSize().value();
+				double fleetCap = fleet->capacity().value();
+				double numVehicles = ceil(size / fleetCap);
+				Cost segCost( numVehicles * seg->length().value() * seg->difficulty().value() * fleet->cost().value() );
+				shipment_->costInc(segCost);
 				//give to next location
 				Location::Ptr nextLoc = seg->returnSegment()->source();
 				nextLoc->shipmentIs(shipment_);
 				//delete activity and reactor
-				seg->shipmentsTraversingDec();
+				//cout << seg->name() << " : " << seg->shipmentsTraversing().toString() << endl;
+				if(seg->shipmentsTraversing() > 0) seg->shipmentsTraversingDec(); //PEO
 				activity_->statusIs(Activity::deleted);
 				
 			}
@@ -1036,23 +1048,11 @@ void ForwardActivityReactor::onStatus() {
 			if(seg->shipmentsTraversing() < seg->capacity()){
 				seg->shipmentsTraversingInc();
 				delivered_ = true;
-				Fleet::Ptr fleet;
-				if(Segment::boatSeg() == seg->segmentType()) fleet = eng->boatFleet();
-				else if(Segment::truckSeg() == seg->segmentType()) fleet = eng->truckFleet();
-				else fleet = eng->planeFleet();
-				
-				double size = shipment_->source()->shipmentSize().value();
-				double fleetCap = fleet->capacity().value();
-				double numVehicles = ceil(size / fleetCap);
-				Cost segCost( numVehicles * seg->length().value() * seg->difficulty().value() * fleet->cost().value() );
-				shipment_->costInc(segCost);
-				
 				Time traversalTime( seg->length().value() / fleet->speed().value() );
-			
 				activity_->nextTimeIs(manager_->now().value() + traversalTime.value());
 			}
 			else{
-				activity_->nextTimeIs(manager_->now().value() + 1);
+				activity_->nextTimeIs(manager_->now().value() + 1.0);
 			}
 			
 			activity_->statusIs(Activity::nextTimeScheduled);

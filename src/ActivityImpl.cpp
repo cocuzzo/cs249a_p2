@@ -70,7 +70,7 @@ void ManagerImpl::nowIs(Shipping::Time t) {
 			//calculate amount of time to sleep
 			Shipping::Time diff = Shipping::Time(nextToRun->nextTime().value() - now_.value());
 			//sleep 100ms (100,000 microseconds) for every unit of time
-			usleep(( ((int)diff.value()) * 100000));
+			usleep(( (diff.value()) * 1000000.0)); //PEO
 		}
 		
 		now_ = nextToRun->nextTime();

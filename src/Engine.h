@@ -111,7 +111,10 @@ public:
 	bool readyToShip();
 
 	inline Capacity shipmentsReceived() const { return shipmentsReceived_; }
-	inline Time shipmentsAvgLatency() const { return shipmentsTotalTime_.value() / shipmentsReceived_.value(); }
+	inline Time shipmentsAvgLatency() const { 
+		if(shipmentsReceived_ == Capacity()) return Time(0.0);
+		return shipmentsTotalTime_.value() / shipmentsReceived_.value(); 
+	}
 	inline Cost shipmentsTotalCost() const { return shipmentsTotalCost_; }
 
 	void shipmentsReceivedInc() { ++shipmentsReceived_; }
