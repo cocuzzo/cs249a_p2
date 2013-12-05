@@ -88,11 +88,11 @@ int main(int argc, char* argv[]) {
     a->attributeIs("shipment size", "50");
     a->attributeIs("destination", "d");
 
-    b->attributeIs("transfer rate", "2");
+    b->attributeIs("transfer rate", "240");
     b->attributeIs("shipment size", "50");
     b->attributeIs("destination", "d");
 
-    d->attributeIs("transfer rate", "1");
+    d->attributeIs("transfer rate", "240");
     d->attributeIs("shipment size", "50");
     d->attributeIs("destination", "b");
 
@@ -100,6 +100,8 @@ int main(int argc, char* argv[]) {
     // -- Time-stepped Simulation  
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
     Activity::Manager::Ptr activityManager = activityManagerInstance();
+    //activityManager->activityTimeIs(Activity::Manager::realTime());
+    activityManager->activityTimeIs(Activity::Manager::virtualTime());
     
     // advance the time by a full day
     activityManager->nowIs(23.0);
