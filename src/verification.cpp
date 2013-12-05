@@ -34,9 +34,7 @@ int main(int argc, char* argv[]) {
             D
 
     All shipments go from A -> D and B -> D
-
     */
-
 
     // --- Create Instances
     // -- Locations
