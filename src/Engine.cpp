@@ -502,12 +502,12 @@ Engine::routeShipment(Shipment::Ptr shipment, Location::Ptr current)
     // assumes that the graph has at least 2 connected locations (not degenerate)
     Engine::generateRoutingTable(Engine::minCost());
     
-    //Print routing table
-    for (auto p : routingTable_) {
-    	string key = p.first;
-    	Segment::Ptr val = p.second;
-    	cout << key << " : " << val->name() << endl;
-    }
+    // //Print routing table
+    // for (auto p : routingTable_) {
+    // 	string key = p.first;
+    // 	Segment::Ptr val = p.second;
+    // 	cout << key << " : " << val->name() << endl;
+    // }
     
   }
   
