@@ -1,0 +1,58 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+FLEET PARAMETERS
+truck capacity: 100
+truck cost:     1.00
+truck speed:    100.00
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SIMULATION PARAMETERS
+shipment rate:       24
+shipment size:       random
+simulation hours:    100
+term. seg. capacity: 10
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+generating 'experiment' shipping network...done
+creating activity manager...done
+starting simulation...done
+~~ Simulation Statistics ~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CUSTOMER s00 statistics:
+shipments received: 0
+average latency:    0.00
+total cost:         0.00
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SEGMENT oSeg00 statistics:
+shipments received: 101
+shipments refused:  0
+segment capacity:   10
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SEGMENT oSeg0 statistics:
+shipments received: 1000
+shipments refused:  843
+segment capacity:   10
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SEGMENT iSegd statistics:
+shipments received: 9005
+shipments refused:  8899
+segment capacity:   10
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+CUSTOMER dest statistics:
+shipments received: 980
+average latency:    24.53
+total cost:         1542000.00
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~ Aggregate Segment Statistics ~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+number of source segments:                        100
+avg. shipments received across source segments:   101
+avg. shipments refused across source segments:    0
+congestions ratio (refused / received):           0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+number of terminal segments:                      10
+avg. shipments received across terminal segments: 1000
+avg. shipments refused across terminal segments:  823.8
+congestions ratio (refused / received):           0.8238
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+shipments received across destination segment:    9005
+shipments refused across destination segment:     8899
+congestions ratio (refused / received):           0.988229
+~~~~ End of Statistics ~~~~
