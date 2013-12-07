@@ -20,7 +20,19 @@ Exceptions are being thrown back to the client unless our shipping engine can do
 
 Experimental Simulations
 
-Per the requirements of this assignment, we implemented the verification and experiment networks for testing. The verification is composed of a single terminal and 3 customer locations in a star-formation; two of these customers ships packages to the same, third customer location. This network was used to verify that packages were being shipped from customer sources, forwarded along appropriate segments using the routing table, and successfully delivered to the destination location. 
+Per the requirements of this assignment, we implemented the verification and experiment networks for testing. The verification is composed of a single terminal and 3 customer locations in a star-formation (see diagram below); two of these customers ships packages to the same, third customer location. This network was used to verify that packages were being shipped from customer sources, forwarded along appropriate segments using the routing table, and successfully delivered to the destination location. 
+
+Verification Network:
+
+	[A]    [B]
+	 \     /
+          \   /
+           v v
+           [C]
+	    |
+	    |
+	    v
+           [D]
 
 We first advanced the simulation on the verification network using small shipment rates (2 shipments per day per source) for 24 hours, and then reset shipment rates to 0 (stops injection of new shipments) and advanced the simulation for another 24 hours to allow any shipment queues to clear. We verified that the simulation yielded sensible values received & refused shipment counts and average shipment latencies. As expected, when shipment rates are low and segment capacities are suitably high, there is queueing of shipments in the network and thus no shipments are refused by any of the segments and all shipment latencies are exactly the sum of travel times along each path. For reference, this simulation may be run using ‘./verification’ from the source directory of the submission.
 
