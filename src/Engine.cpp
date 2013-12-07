@@ -1026,8 +1026,7 @@ void ForwardActivityReactor::onStatus() {
 				Location::Ptr nextLoc = seg->returnSegment()->source();
 				nextLoc->shipmentIs(shipment_);
 				//delete activity and reactor
-				//cout << seg->name() << " : " << seg->shipmentsTraversing().toString() << endl;
-				if(seg->shipmentsTraversing() > 0) seg->shipmentsTraversingDec(); //PEO
+        seg->shipmentsTraversingDec();
 				activity_->statusIs(Activity::deleted);
 				
 			}

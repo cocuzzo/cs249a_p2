@@ -1,0 +1,107 @@
+user: dcocuzzo
+user: oreccp
+
+======================
+Design Guide & Discussion
+======================
+
+Assignment 3 
+12/6/13
+
+Our solution to this assignment included the addition of an activity manager, activities, activity reactors, and the evolution of our existing shipping infrastructure created in assignment 2.  
+
+The notion of an activity anchored the actual execution of the simulation.  In our design, there are injection activities and forwarding activities.  Both injection activities and forwarding activities are represented by the same Activity class because activities are generic by design, serving only as simple state machines. Activities only have a concept of its next time to run and its status.  This design allows for many different types of activities to run in the same framework regardless of its function.  The actual actions taken in response to changes in time and state are handled by the application specific activity reactors.  This structure follows the pattern of separating state from processing.
+
+Activity reactors were used to implement the shipping specific interactions.  In our design, not surprisingly, two activity reactors were used, injection reactors and forward reactors.  Injection reactors represent a shipment schedule.  The job of an injection reactors is to hand off shipments to their corresponding location at a specific rate.   Forward reactors represent the movement of a shipment across one segment.  The job of a forward reactor is to move a shipment from a location, across a segment, to another location.  These activity reactors alone are not enough to run the simulation.  The segment reactors and location reactors from assignment 2 were extended to support the shipment handoffs between locations and segments and vice versa.  Location reactors are responsible for creating the injection activity/reactor pair if the client sets the 3 shipment attributes on customer locations.  Additionally, they route shipments that arrive at that location to the shipment’s optimal next segment based on our routing algorithm.  Our algorithm leverages the connect functionality built for assignment 2.  The connect feature returns a list of all possible paths connecting a source and destination.  The algorithm builds a routing table based on lowest cost, shortest distance or shortest time.  The segment reactors are responsible for accepting each new shipment trying to traverse the segment and creating a forwarding activity/reactor pair for the shipment.  A shipment is accepted if there are less shipments traveling over the segment than its capacity.  In this case, the forwarding activity’s next time is set to be the current time plus the calculated travel time across the segment.  The activity is inserted into the activity manager’s priority queue.  A shipment is refused if the segment is saturated, meaning the shipments traversing equals the segment’s capacity.  The forwarding activity state machine is implemented by its reactor, which continually tries to traverse the segment, if it is not saturated.  If the segment is saturated, the forwarding activity is enqueued with a next time set at 1 hour later.  At some time later, the forwarding activity will be able to traverse the segment.
+
+The activity manager keeps track of all activities and controls the simulation time.  An attribute is used to set the simulation to run in virtual time or real time (activityManager->activityTimeIs(...), see line 174 in experiment.cpp).  At the core, the manager has a nowIs( Time ) function that will continue to execute activities until the simulation time is caught up to the time specified by the user. The manager sets the state of the activities and the corresponding reactor implements the shipping simulation state machine.
+
+Exceptions are being thrown back to the client unless our shipping engine can do smarter error handling.  For this assignment, we used one Exception class for simplicity.  In a larger scale program, logging would be done immediately when an exception is thrown.  Also, the general, system-level exception types would be used instead of just one.
+
+Experimental Simulations
+
+Per the requirements of this assignment, we implemented the verification and experiment networks for testing. The verification is composed of a single terminal and 3 customer locations in a star-formation; two of these customers ships packages to the same, third customer location. This network was used to verify that packages were being shipped from customer sources, forwarded along appropriate segments using the routing table, and successfully delivered to the destination location. 
+
+We first advanced the simulation on the verification network using small shipment rates (2 shipments per day per source) for 24 hours, and then reset shipment rates to 0 (stops injection of new shipments) and advanced the simulation for another 24 hours to allow any shipment queues to clear. We verified that the simulation yielded sensible values received & refused shipment counts and average shipment latencies. As expected, when shipment rates are low and segment capacities are suitably high, there is queueing of shipments in the network and thus no shipments are refused by any of the segments and all shipment latencies are exactly the sum of travel times along each path. For reference, this simulation may be run using ‘./verification’ from the source directory of the submission.
+
+Next, we constructed the experiment tree network as outlined in the assignment handout, which includes 100 sources that ship to a single destination over a 3-hop, 10-source fan-out network structure. We first ran the simulation for 100 hours using the default shipment rate (1 shipment per hour), shipment size (100 packages), and segment capacity (10 concurrent shipments); the output is available in results/base.out. 
+
+Next we ran the following three experiments, each varying a single parameter from the default base case:
+1. Randomize shipment sizes to be between 1 and 1000 packages.
+2. Increase the shipment transfer rate at all sources to be 5x the default rate (5 shipments per hour).
+3. Decrease the segment capacities for all segments between intermediate terminals to be 1/5x the default value (2 concurrent shipments).
+
+For each experiment, we report several statistics: the cumulative cost of all delivered packages, the average latency of a delivered package, and the average number of shipments received and refused along the ten terminal segments that connect 10 terminals (from source side) to a single terminal (on destination side). We also define the congestion factor of these segments as the ratio of refused shipments to received shipments. Note that in our simulations, shipments are NEVER dropped; they are queued indefinitely until a segment has the capacity to send the shipment; this is why the reported number of delivered shipments is much lower than injected shipment counts, as shipments are still in segment queues when the results are reported.  
+
+Our experimental  results are summarized in the table below.
+
++---------------------------+-----------+--------------+--------------+--------------+
+|                           | Base Case | Experiment 1 | Experiment 2 | Experiment 3 |
++---------------------------+-----------+--------------+--------------+--------------+
+| Destination Stats         |           |              |              |              |
+| Cumulative Shipment Cost  | 294000    | 1542000      | 291300       | 291600       |
+| Average Shipment Latency  | 24.53     | 24.53        | 43.16        | 35.46        |
+| # of Shipments Injected   | 10000     | 10000        | 50000        | 10000        |
+| # of Shipments Delivered  | 980       | 980          | 971          | 972          |
+|                           |           |              |              |              |
+| Terminal Segment Stats:   |           |              |              |              |
+| # of Shipments Received   | 1000      | 1000         | 4950         | 1000         |
+| # of Shipments Refused    | 8899      | 8899         | 4902.6       | 991.2        |
+| Congestion Factor         | 0.8238    | 0.8238       | 0.990424     | 0.9912       |
++---------------------------+-----------+--------------+--------------+--------------+
+
+Results Discussion
+
+For experiment 1, we expect only the cost to change from the default base case; this is because a shipment is either sent all or none along a segment. Note that there was ambiguity in the assignment description as to the interpretation of ‘segment capacity’; here we define segment capacity to be the number of concurrent shipments that can be traversing a segment, NOT the number of concurrent vehicles traversing a segment. As expected, we observed approximately a 5x increase in total shipment costs at the destination node, which follows from the fact that the average shipment size has increased from 100 packages to 500 packages.
+
+For experiment 2, we expect the average shipment latency to increase significantly given that we’re now flooding the network with 5x as many shipments in the same time interval, and the segment capacities (fixed at 10 concurrent shipments) provides a hard upper bound on the number of shipments delivered and shipping throughput that the network can achieve. As expected, we the average latency of a package nearly doubled with this increase in network congestion, and because shipments were now being queued at a much higher rate, total (delivered) cost was slightly reduced. Note that even though we increase the shipment rates by 5x, we do not necessarily observe a 5x increase in latency and congestion, since our base case simulation parameters already generated a considerable amount of network congestion. It is worth noting that the congestion factor increased from 0.82 to 0.99 for this experiment, meaning that nearly all shipments incur some degree of queueing during their lifetimes.
+
+For experiment 3, we again expect the average shipment latency to increase as a consequence of 1/5x lower segment capacity and therefore shipping throughput. Similar to experiment 2, we see an increase in congestion factor from 0.82 to 0.99, indicating that the network is highly congested due to the decrease in capacity. Clearly, throughput is dependent on the bottleneck link through a fixed path, as is elucidated in this experiment by reducing the segment capacity of a single stage of the tree-network.
+
+Finally, we discovered an interesting implementation detail through our experimental analysis; there is no guarantee of ordering within the C++11 STL priority queue container for elements that have a common key (this is a detail we overlooked at first). We discovered this through an interesting edge case; when the network is perfectly saturated, that is, the segment capacities allowed for exactly the throughput specified by the shipping rates, we observed a small number of shipment refusals even though we expect there to be zero. Why would this occur? It turns out that new shipments are being scheduled on the ActivityManager’s priority queue just before delivered shipments are being processed from the same queue, within the same time step. Since the priority queue does not guarantee FIFO ordering for elements with the same key, this caused a small number of shipments to be queued even though the segment should be able to support its transfer. The lesson learned is that synchronization and timing are indeed quite difficult to manage.
+
+-----------------------------------------------------------------------
+
+Assignment 2 (for the TA's convenience) 
+
+Our design ensures that all shipping simulation state is stored in entity objects 
+(Engine Layer), and processing is done by the Engine class. The Engine class provides
+factory methods (called by Rep-layer) for creating and deleting shipping entity
+objects. The Engine instance does not keep direct pointers to entity objects but
+instead a collection of LocationReactor and SegmentReactor notifiee objects
+("very smart pointers"); the individual reactors respond to entity mutators
+and modify related entity objects if necessary (such as updating a location's
+segment list when the source attribute is set for a segment). This creates a
+centralized module for processing, and entity objects are essentially
+strongly-typed containers for consistent state.
+
+Our design tracks network statistics using a Stats class that is a notifee of the
+Engine class; Stats is notified of relevant network events by 'trampolining'
+notifications from individual entity reactors up through the Engine class, which
+processes notifications and propagates relevant information to Stats through the
+usual notification model.
+
+Connect and explore queries are implemented as Engine methods, since per-query
+results do not persist. We have developed Path and ConstrainedPath classes to support
+the connect and explore queries, respectively. These classes encapsulate the network
+consistency, entity type checking, and constraint checking logic by providing a
+robust segmentAdd method. In addition, we offload the work of computing a segment's
+cost or time contribution from the Path class to the Engine class, which can
+directly access the relevant Fleet attributes. These two design choices allow the
+graph search algorithms implemented by the engine to support connect/explore to
+be quite simple.
+
+We have chosen to keep specific entity-type classes (i.e. BoatTerminal) within our
+implementation (Engine.h) for flexibility and extensibility, although we currently
+only instantiate generic Location/Segment entities that contain an enumerated value
+indicating the Location/Segment type. 
+
+
+
+
+
+
+
+
+
+

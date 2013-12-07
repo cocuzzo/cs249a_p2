@@ -113,7 +113,7 @@ public:
 	inline Capacity shipmentsReceived() const { return shipmentsReceived_; }
 	inline Time shipmentsAvgLatency() const { 
 		if(shipmentsReceived_ == Capacity()) return Time(0.0);
-		return shipmentsTotalTime_.value() / shipmentsReceived_.value(); 
+		return shipmentsTotalTime_.value() / static_cast<double>(shipmentsReceived_.value()); 
 	}
 	inline Cost shipmentsTotalCost() const { return shipmentsTotalCost_; }
 
@@ -496,7 +496,7 @@ public:
 	
 	ForwardActivityReactor(Fwk::Ptr<Activity::Manager> _manager, Activity*
 			 _activity, Shipment::Ptr _shipment, Fwk::Ptr<SegmentReactor> _segReactor) 
-     : Notifiee(_activity), segReactor_(_segReactor), shipment_(_shipment), activity_(_activity), manager_(_manager) {}
+     : Notifiee(_activity), segReactor_(_segReactor), shipment_(_shipment), activity_(_activity), manager_(_manager), delivered_(false) {}
 	
 	~ForwardActivityReactor(){}
 	
